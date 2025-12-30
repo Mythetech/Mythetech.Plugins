@@ -1,8 +1,6 @@
 name: Publish Plugins
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -33,13 +31,16 @@ jobs:
           fi
         done
 
+    - name: Create zip archive
+      run: |
+        cd release
+        zip -r plugins.zip plugins/
+
     - name: Upload to Azure Blob Storage
-      uses: azure/CLI@v2.2.0
-      with:
-        azcliversion: 2.2.0
-        inlineScript: |
-          az storage blob upload-batch \
-            --account-name "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}" \
-            --account-key "${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}" \
-            --destination "${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}" \
-            --source release/plugins
+      run: |
+        curl -X PUT \
+          "${{ secrets.AZURE_BLOB_SAS_URL }}" \
+          -H "x-ms-blob-type: BlockBlob" \
+          -H "Content-Type: application/zip" \
+          --data-binary @release/plugins.zip
+
