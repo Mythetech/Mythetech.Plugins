@@ -1,38 +1,354 @@
 @using MudBlazor
 @using PSC.Blazor.Components.MarkdownEditor
 @using Mythetech.Framework.Components.SimpleTabs
+@using System.Text.Json
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
 @inherits Mythetech.Framework.Infrastructure.Plugins.Components.PluginContextPanel
+@inject IJSRuntime JSRuntime
 
-<SimpleTabs>
+<SimpleTabs @ref="tabsRef">
     <Tab Icon="@Icons.Material.Rounded.EditNote" Name="Editor">
-        <div class="col-md-12">
-            <MarkdownEditor @bind-Value="@markdownValue"
-                            ValueHTMLChanged="@OnMarkdownValueHTMLChanged" />
-
-            <hr />
-
-            <h3>Result</h3>
-            @((MarkupString)markdownHtml)
+        <div class="d-flex flex-column" style="height: 100%;">
+            <div class="d-flex align-items-center gap-3 pa-3" style="border-bottom: 1px solid var(--mud-palette-divider);">
+                <MudTextField @bind-Value="currentNote.Name"
+                              Label="Note Name"
+                              Variant="Variant.Outlined"
+                              Class="flex-grow-1"
+                              Style="max-width: 300px;"
+                              Immediate="true" />
+                <MudIconButton Icon="@Icons.Material.Rounded.ContentCopy"
+                              Variant="Variant.Text"
+                              Color="Color.Default"
+                              OnClick="CopyToClipboard"
+                              Class="rounded-md"
+                              Title="Copy to clipboard" />
+                <MudIconButton Icon="@Icons.Material.Rounded.Save"
+                              Variant="Variant.Filled"
+                              Color="Color.Primary"
+                              OnClick="SaveNote"
+                              Class="rounded-md"
+                              Title="Save note" />
+            </div>
+            <div class="flex-grow-1" style="overflow: auto;">
+                <MarkdownEditor @bind-Value="markdownValue"
+                                ValueHTMLChanged="@OnMarkdownValueHTMLChanged" />
+            </div>
         </div>
     </Tab>
     
     <Tab Icon="@Icons.Material.Rounded.List" Name="Notes">
-        <span>Note</span>
+        @{
+            _ = ReloadNotesIfNeeded();
+        }
+        <div class="d-flex flex-column" style="height: 100%;">
+            <div class="d-flex justify-end pa-3" style="border-bottom: 1px solid var(--mud-palette-divider);">
+                <MudIconButton Icon="@Icons.Material.Rounded.Add"
+                              Variant="Variant.Filled"
+                              Color="Color.Primary"
+                              OnClick="CreateNewNote"
+                              Class="rounded-md"
+                              Title="Create new note" />
+            </div>
+            <div class="flex-grow-1" style="overflow: auto;">
+                <div class="pa-4">
+            @if (notes == null)
+            {
+                <div class="d-flex justify-center align-center" style="height: 200px;">
+                    <MudProgressCircular Indeterminate="true" />
+                </div>
+            }
+            else if (!notes.Any())
+            {
+                <div class="d-flex flex-column align-center justify-center pa-8" style="min-height: 300px;">
+                    <MudIcon Icon="@Icons.Material.Rounded.Note" Size="Size.Large" Color="Color.Default" Class="mb-4" />
+                    <MudText Typo="Typo.h6" Class="mb-2">No notes yet</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Create your first note in the Editor tab</MudText>
+                </div>
+            }
+            else
+            {
+                <MudList Class="pa-0" T="string">
+                    @foreach (var note in notes.OrderByDescending(n => n.UpdatedAt))
+                    {
+                        <MudListItem Href="#"
+                                    OnClick="@(() => OpenNote(note))"
+                                    Class="rounded-md mb-2"
+                                    Style="border: 1px solid var(--mud-palette-divider); cursor: pointer; transition: all 0.2s ease;"
+                                    OnMouseOver="@((MouseEventArgs e) => OnNoteHover(note, true))"
+                                    OnMouseOut="@((MouseEventArgs e) => OnNoteHover(note, false))">
+                            <div class="d-flex align-items-center justify-space-between w-100">
+                                <div class="flex-grow-1">
+                                    <MudText Typo="Typo.subtitle1" Class="mb-1">@note.Name</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="text-truncate" Style="max-width: 500px;">
+                                        @GetNotePreview(note.Content)
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                                        Updated @GetRelativeTime(note.UpdatedAt)
+                                    </MudText>
+                                </div>
+                                <MudMenu Icon="@Icons.Material.Rounded.MoreVert"
+                                        AnchorOrigin="Origin.BottomRight"
+                                        TransformOrigin="Origin.TopRight"
+                                        OffsetY="true"
+                                        Dense="true"
+                                        OnClick:StopPropagation="true">
+                                    <MudMenuItem OnClick="@(() => EditNote(note))" Icon="@Icons.Material.Rounded.Edit">
+                                        Edit
+                                    </MudMenuItem>
+                                    <MudMenuItem OnClick="@(() => DeleteNote(note))" Icon="@Icons.Material.Rounded.Delete" Color="Color.Error">
+                                        Delete
+                                    </MudMenuItem>
+                                </MudMenu>
+                            </div>
+                        </MudListItem>
+                    }
+                </MudList>
+            }
+                </div>
+            </div>
+        </div>
     </Tab>
-
 </SimpleTabs>
 
+@if (showDeleteDialog)
+{
+    <MudDialog IsVisible="showDeleteDialog" Options="new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true }">
+        <DialogContent>
+            <MudText>Are you sure you want to delete "@noteToDelete?.Name"? This action cannot be undone.</MudText>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="CancelDelete" Color="Color.Default">Cancel</MudButton>
+            <MudButton OnClick="ConfirmDelete" Color="Color.Error" Variant="Variant.Filled">Delete</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
 
 @code {
     public override string Icon { get; } = Icons.Material.Rounded.Notes;
     public override string Title { get; } = "Notes";
     
-    string markdownValue = "#Markdown Editor\nThis is a test";
-    string markdownHtml;
+    private SimpleTabs? tabsRef;
+    private Note? currentNote = new();
+    private List<Note>? notes;
+    private string markdownValue = string.Empty;
+    private string markdownHtml = string.Empty;
+    private bool showDeleteDialog;
+    private Note? noteToDelete;
+    private const string NotesStorageKey = "notes";
+    private DateTime lastNotesLoad = DateTime.MinValue;
 
-    Task OnMarkdownValueChanged(string value)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        return Task.CompletedTask;
+        await base.OnAfterRenderAsync(firstRender);
+        
+        if (firstRender)
+        {
+            await LoadNotes();
+        }
+    }
+
+
+    private async Task ReloadNotesIfNeeded()
+    {
+        var timeSinceLastLoad = DateTime.UtcNow - lastNotesLoad;
+        if (timeSinceLastLoad.TotalSeconds > 1 || notes == null)
+        {
+            await LoadNotes();
+        }
+    }
+
+    private async Task LoadNotes()
+    {
+        try
+        {
+            var persistence = Context?.StorageFactory.CreateForPlugin(ManifestConstants.Id);
+            if (persistence == null) return;
+
+            var notesJson = await persistence.GetAsync<string>(NotesStorageKey);
+            if (string.IsNullOrEmpty(notesJson))
+            {
+                notes = new List<Note>();
+            }
+            else
+            {
+                notes = JsonSerializer.Deserialize<List<Note>>(notesJson) ?? new List<Note>();
+            }
+        }
+        catch
+        {
+            notes = new List<Note>();
+        }
+        finally
+        {
+            lastNotesLoad = DateTime.UtcNow;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveNote()
+    {
+        if (string.IsNullOrWhiteSpace(currentNote?.Name))
+        {
+            currentNote ??= new Note();
+            currentNote.Name = "Untitled Note";
+        }
+
+        currentNote.Content = markdownValue;
+        currentNote.UpdatedAt = DateTime.UtcNow;
+        
+        if (string.IsNullOrEmpty(currentNote.Id))
+        {
+            currentNote.Id = Guid.NewGuid().ToString();
+            currentNote.CreatedAt = DateTime.UtcNow;
+        }
+
+        try
+        {
+            var persistence = Context?.StorageFactory.CreateForPlugin(ManifestConstants.Id);
+            if (persistence == null) return;
+
+            notes ??= new List<Note>();
+            var existingNote = notes.FirstOrDefault(n => n.Id == currentNote.Id);
+            
+            if (existingNote != null)
+            {
+                var index = notes.IndexOf(existingNote);
+                notes[index] = currentNote;
+            }
+            else
+            {
+                notes.Add(currentNote);
+            }
+
+            var notesJson = JsonSerializer.Serialize(notes);
+            await persistence.SetAsync(NotesStorageKey, notesJson);
+            
+            await LoadNotes();
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Handle error - could show a snackbar notification
+        }
+    }
+
+    private async Task OpenNote(Note note)
+    {
+        currentNote = new Note
+        {
+            Id = note.Id,
+            Name = note.Name,
+            Content = note.Content,
+            CreatedAt = note.CreatedAt,
+            UpdatedAt = note.UpdatedAt
+        };
+        markdownValue = note.Content;
+        StateHasChanged();
+    }
+
+    private async Task EditNote(Note note)
+    {
+        await OpenNote(note);
+    }
+
+    private async Task CreateNewNote()
+    {
+        currentNote = new Note();
+        markdownValue = string.Empty;
+        StateHasChanged();
+        
+        if (tabsRef != null)
+        {
+            tabsRef.SelectTab("Editor");
+        }
+    }
+
+    private void DeleteNote(Note note)
+    {
+        noteToDelete = note;
+        showDeleteDialog = true;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (noteToDelete == null || notes == null) return;
+
+        try
+        {
+            var persistence = Context?.StorageFactory.CreateForPlugin(ManifestConstants.Id);
+            if (persistence == null) return;
+
+            notes.Remove(noteToDelete);
+            var notesJson = JsonSerializer.Serialize(notes);
+            await persistence.SetAsync(NotesStorageKey, notesJson);
+            
+            if (currentNote?.Id == noteToDelete.Id)
+            {
+                currentNote = new Note();
+                markdownValue = string.Empty;
+            }
+            
+            await LoadNotes();
+        }
+        catch
+        {
+            // Handle error
+        }
+        finally
+        {
+            showDeleteDialog = false;
+            noteToDelete = null;
+        }
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteDialog = false;
+        noteToDelete = null;
+    }
+
+    private async Task CopyToClipboard()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", markdownValue);
+        }
+        catch
+        {
+            // Handle error
+        }
+    }
+
+    private string GetNotePreview(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return "No content";
+        
+        var preview = content.Replace("\n", " ").Trim();
+        return preview.Length > 100 ? preview.Substring(0, 100) + "..." : preview;
+    }
+
+    private string GetRelativeTime(DateTime dateTime)
+    {
+        var timeSpan = DateTime.UtcNow - dateTime;
+        
+        if (timeSpan.TotalMinutes < 1)
+            return "just now";
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes} minute{(timeSpan.TotalMinutes >= 2 ? "s" : "")} ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours} hour{(timeSpan.TotalHours >= 2 ? "s" : "")} ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays} day{(timeSpan.TotalDays >= 2 ? "s" : "")} ago";
+        
+        return dateTime.ToString("MMM d, yyyy");
+    }
+
+    private void OnNoteHover(Note note, bool isHovering)
+    {
+        // Could add hover effects here if needed
     }
 
     Task OnMarkdownValueHTMLChanged(string value)
