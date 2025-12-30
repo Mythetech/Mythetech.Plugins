@@ -34,9 +34,9 @@ jobs:
         done
 
     - name: Upload to Azure Blob Storage
-      uses: azure/CLI@v1
+      uses: azure/CLI@v2.2.0
       with:
-        azcliversion: 2.0
+        azcliversion: 2.2.0
         inlineScript: |
           az storage blob upload-batch \
             --account-name "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}" \
