@@ -43,5 +43,5 @@ jobs:
             --account-key "${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}" \
             --destination "${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}" \
             --source release/plugins \
-            --overwrite
+            --overwrite true
 
