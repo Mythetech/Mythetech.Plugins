@@ -1,0 +1,43 @@
+@using MudBlazor
+@using PSC.Blazor.Components.MarkdownEditor
+@using Mythetech.Framework.Components.SimpleTabs
+@inherits Mythetech.Framework.Infrastructure.Plugins.Components.PluginContextPanel
+
+<SimpleTabs>
+    <Tab Icon="@Icons.Material.Rounded.EditNote" Name="Editor">
+        <div class="col-md-12">
+            <MarkdownEditor @bind-Value="@markdownValue"
+                            ValueHTMLChanged="@OnMarkdownValueHTMLChanged" />
+
+            <hr />
+
+            <h3>Result</h3>
+            @((MarkupString)markdownHtml)
+        </div>
+    </Tab>
+    
+    <Tab Icon="@Icons.Material.Rounded.List" Name="Notes">
+        <span>Note</span>
+    </Tab>
+
+</SimpleTabs>
+
+
+@code {
+    public override string Icon { get; } = Icons.Material.Rounded.Notes;
+    public override string Title { get; } = "Notes";
+    
+    string markdownValue = "#Markdown Editor\nThis is a test";
+    string markdownHtml;
+
+    Task OnMarkdownValueChanged(string value)
+    {
+        return Task.CompletedTask;
+    }
+
+    Task OnMarkdownValueHTMLChanged(string value)
+    {
+        markdownHtml = value;
+        return Task.CompletedTask;
+    }
+}

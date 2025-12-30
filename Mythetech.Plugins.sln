@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mythetech.Plugins.Notes", "src\Mythetech.Plugins.Notes\Mythetech.Plugins.Notes.csproj", "{14CF078E-F7A1-48E6-8F75-C62CB97B3EDF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mythetech.Plugins.Notes.Test", "test\Mythetech.Plugins.Notes.Test\Mythetech.Plugins.Notes.Test.csproj", "{C9976E4D-8893-4097-B02B-666C8713EAE5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Notes", "Notes", "{A185096A-6692-40D5-95C9-5AC105AB8378}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{14CF078E-F7A1-48E6-8F75-C62CB97B3EDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14CF078E-F7A1-48E6-8F75-C62CB97B3EDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14CF078E-F7A1-48E6-8F75-C62CB97B3EDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14CF078E-F7A1-48E6-8F75-C62CB97B3EDF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9976E4D-8893-4097-B02B-666C8713EAE5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9976E4D-8893-4097-B02B-666C8713EAE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9976E4D-8893-4097-B02B-666C8713EAE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9976E4D-8893-4097-B02B-666C8713EAE5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{14CF078E-F7A1-48E6-8F75-C62CB97B3EDF} = {A185096A-6692-40D5-95C9-5AC105AB8378}
+		{C9976E4D-8893-4097-B02B-666C8713EAE5} = {A185096A-6692-40D5-95C9-5AC105AB8378}
+	EndGlobalSection
+EndGlobal
