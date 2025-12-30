@@ -1,0 +1,47 @@
+name: Publish Plugins
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore Mythetech.Plugins.sln
+
+    - name: Build plugins
+      run: dotnet build Mythetech.Plugins.sln --configuration Release --no-restore
+
+    - name: Publish plugins
+      run: |
+        mkdir -p release/plugins
+        for project in src/*/*.csproj; do
+          if [ -f "$project" ]; then
+            project_name=$(basename "$project" .csproj)
+            dotnet publish "$project" --configuration Release --output "release/plugins/$project_name" --no-build
+          fi
+        done
+
+    - name: Upload to Azure Blob Storage
+      uses: azure/CLI@v1
+      with:
+        azcliversion: 2.0
+        inlineScript: |
+          az storage blob upload-batch \
+            --account-name "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}" \
+            --account-key "${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}" \
+            --destination "${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}" \
+            --source release/plugins \
+            --overwrite
+
