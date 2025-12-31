@@ -4,9 +4,13 @@
 @using System.Text.Json
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
+@using Mythetech.Framework.Infrastructure.Plugins.Components
 @inherits Mythetech.Framework.Infrastructure.Plugins.Components.PluginContextPanel
 @inject IJSRuntime JSRuntime
-
+@attribute [PluginComponentMetadata(
+    Icon = Icons.Material.Rounded.Note,
+    Title = "Notes",
+    Order = 10)]
 <SimpleTabs @ref="tabsRef">
     <Tab Icon="@Icons.Material.Rounded.EditNote" Name="Editor">
         <div class="d-flex flex-column" style="height: 100%;">
