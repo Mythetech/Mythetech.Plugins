@@ -8,7 +8,7 @@
 @inherits Mythetech.Framework.Infrastructure.Plugins.Components.PluginContextPanel
 @inject IJSRuntime JSRuntime
 @attribute [PluginComponentMetadata(
-    Icon = Icons.Material.Rounded.Note,
+    Icon = Icons.Material.Outlined.NoteAlt,
     Title = "Notes",
     Order = 10)]
 <SimpleTabs @ref="tabsRef">
@@ -129,7 +129,7 @@
 }
 
 @code {
-    public override string Icon { get; } = Icons.Material.Rounded.Notes;
+    public override string Icon { get; } = Icons.Material.Outlined.NoteAlt;
     public override string Title { get; } = "Notes";
     
     private SimpleTabs? tabsRef;
