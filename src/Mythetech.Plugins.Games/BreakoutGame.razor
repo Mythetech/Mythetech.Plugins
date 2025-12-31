@@ -1,0 +1,297 @@
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@using MudBlazor
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<div class="d-flex flex-column align-center pa-4" style="height: 100%;" @onkeydown="OnKeyDown" @onkeyup="OnKeyUp" tabindex="0">
+    <div class="mb-3">
+        <MudText Typo="Typo.h6" Class="text-center mb-2">Breakout</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="text-center mb-3">
+            Use arrow keys or mouse to move the paddle. Break all bricks to win!
+        </MudText>
+        <div class="d-flex justify-center gap-2 mb-3">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartGame" Disabled="@isPlaying">
+                @(isPlaying ? "Playing..." : "Start Game")
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="ResetGame" Disabled="@(!isPlaying && !gameOver)">
+                Reset
+            </MudButton>
+        </div>
+        @if (gameOver)
+        {
+            <MudAlert Severity="@(bricksRemaining == 0 ? Severity.Success : Severity.Info)" Class="mb-3">
+                @(bricksRemaining == 0 ? "Congratulations! You won!" : "Game Over! Try again.")
+            </MudAlert>
+        }
+        <MudText Typo="Typo.subtitle1" Class="text-center">
+            Score: <strong>@score</strong> | Bricks Remaining: <strong>@bricksRemaining</strong>
+        </MudText>
+    </div>
+    <div class="d-flex justify-center" style="flex: 1; width: 100%; align-items: center;">
+        <canvas @ref="canvasRef" 
+                width="800" 
+                height="600" 
+                style="border: 2px solid var(--mud-palette-divider); border-radius: 4px; background: #000; max-width: 100%; height: auto; cursor: pointer;"
+                @onmousemove="OnMouseMove"
+                @onclick="OnCanvasClick"></canvas>
+    </div>
+</div>
+
+@code {
+    private ElementReference canvasRef;
+    private bool isPlaying = false;
+    private bool gameOver = false;
+    private int score = 0;
+    private int bricksRemaining = 0;
+    private IJSObjectReference? jsModule;
+    private bool leftKeyPressed = false;
+    private bool rightKeyPressed = false;
+    private CancellationTokenSource? gameLoopCancellation;
+
+    private const int PaddleWidth = 100;
+    private const int PaddleHeight = 10;
+    private const int BallSize = 10;
+    private const int BrickRows = 5;
+    private const int BrickCols = 10;
+    private const int BrickWidth = 70;
+    private const int BrickHeight = 20;
+    private const int BrickPadding = 5;
+    private const int BrickOffsetTop = 50;
+    private const int BrickOffsetLeft = 35;
+    private const double PaddleSpeed = 8;
+
+    private double paddleX = 350;
+    private double ballX = 400;
+    private double ballY = 300;
+    private double ballSpeedX = 4;
+    private double ballSpeedY = -4;
+    private bool[,] bricks = new bool[BrickRows, BrickCols];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Mythetech.Plugins.Games/breakout.js");
+            await jsModule.InvokeVoidAsync("setupCanvas", canvasRef);
+            await InitializeBricks();
+            await Draw();
+        }
+    }
+
+    private async Task InitializeBricks()
+    {
+        for (int row = 0; row < BrickRows; row++)
+        {
+            for (int col = 0; col < BrickCols; col++)
+            {
+                bricks[row, col] = true;
+            }
+        }
+        bricksRemaining = BrickRows * BrickCols;
+    }
+
+    private async Task StartGame()
+    {
+        if (isPlaying) return;
+        
+        gameLoopCancellation?.Cancel();
+        gameLoopCancellation = new CancellationTokenSource();
+        
+        isPlaying = true;
+        gameOver = false;
+        score = 0;
+        await InitializeBricks();
+        ballX = 400;
+        ballY = 300;
+        ballSpeedX = 4;
+        ballSpeedY = -4;
+        paddleX = 350;
+        
+        StateHasChanged();
+        _ = Task.Run(async () => await GameLoop(gameLoopCancellation.Token));
+    }
+
+    private async Task ResetGame()
+    {
+        gameLoopCancellation?.Cancel();
+        isPlaying = false;
+        gameOver = false;
+        score = 0;
+        await InitializeBricks();
+        ballX = 400;
+        ballY = 300;
+        paddleX = 350;
+        StateHasChanged();
+        await Draw();
+    }
+
+    private async Task GameLoop(CancellationToken cancellationToken)
+    {
+        while (isPlaying && !gameOver && !cancellationToken.IsCancellationRequested)
+        {
+            Update();
+            await Draw();
+            await Task.Delay(16, cancellationToken);
+        }
+    }
+
+    private void Update()
+    {
+        if (leftKeyPressed && paddleX > 0)
+        {
+            paddleX = Math.Max(0, paddleX - PaddleSpeed);
+        }
+        if (rightKeyPressed && paddleX < 800 - PaddleWidth)
+        {
+            paddleX = Math.Min(800 - PaddleWidth, paddleX + PaddleSpeed);
+        }
+
+        ballX += ballSpeedX;
+        ballY += ballSpeedY;
+
+        if (ballX <= 0 || ballX >= 800 - BallSize)
+        {
+            ballSpeedX = -ballSpeedX;
+            ballX = Math.Max(0, Math.Min(800 - BallSize, ballX));
+        }
+
+        if (ballY <= 0)
+        {
+            ballSpeedY = -ballSpeedY;
+            ballY = 0;
+        }
+
+        if (ballY >= 600 - BallSize - PaddleHeight)
+        {
+            if (ballX + BallSize / 2 >= paddleX && ballX + BallSize / 2 <= paddleX + PaddleWidth)
+            {
+                double hitPos = (ballX + BallSize / 2 - paddleX) / PaddleWidth;
+                ballSpeedX = (hitPos - 0.5) * 8;
+                ballSpeedY = -Math.Abs(ballSpeedY);
+                ballY = 600 - BallSize - PaddleHeight;
+            }
+            else if (ballY >= 600)
+            {
+                gameOver = true;
+                isPlaying = false;
+                InvokeAsync(StateHasChanged);
+                return;
+            }
+        }
+
+        for (int row = 0; row < BrickRows; row++)
+        {
+            for (int col = 0; col < BrickCols; col++)
+            {
+                if (bricks[row, col])
+                {
+                    double brickX = col * (BrickWidth + BrickPadding) + BrickOffsetLeft;
+                    double brickY = row * (BrickHeight + BrickPadding) + BrickOffsetTop;
+
+                    if (ballX + BallSize >= brickX && ballX <= brickX + BrickWidth &&
+                        ballY + BallSize >= brickY && ballY <= brickY + BrickHeight)
+                    {
+                        bricks[row, col] = false;
+                        bricksRemaining--;
+                        score += 10;
+                        ballSpeedY = -ballSpeedY;
+                        
+                        if (bricksRemaining == 0)
+                        {
+                            gameOver = true;
+                            isPlaying = false;
+                            InvokeAsync(StateHasChanged);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task Draw()
+    {
+        if (jsModule == null) return;
+
+        await jsModule.InvokeVoidAsync("drawBreakout", new
+        {
+            canvasRef,
+            paddleX,
+            ballX,
+            ballY,
+            bricks = ConvertBricksToArray(),
+            score,
+            bricksRemaining,
+            gameOver
+        });
+    }
+
+    private int[] ConvertBricksToArray()
+    {
+        var result = new List<int>();
+        for (int row = 0; row < BrickRows; row++)
+        {
+            for (int col = 0; col < BrickCols; col++)
+            {
+                result.Add(bricks[row, col] ? 1 : 0);
+            }
+        }
+        return result.ToArray();
+    }
+
+    private async Task OnMouseMove(MouseEventArgs e)
+    {
+        if (!isPlaying) return;
+
+        if (jsModule != null)
+        {
+            var canvasX = await jsModule.InvokeAsync<double>("getCanvasX", canvasRef, e.ClientX);
+            paddleX = Math.Max(0, Math.Min(800 - PaddleWidth, canvasX - PaddleWidth / 2));
+        }
+    }
+
+    private async Task OnCanvasClick(MouseEventArgs e)
+    {
+        if (!isPlaying && !gameOver)
+        {
+            await StartGame();
+        }
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "ArrowLeft")
+        {
+            leftKeyPressed = true;
+        }
+        else if (e.Key == "ArrowRight")
+        {
+            rightKeyPressed = true;
+        }
+    }
+
+    private void OnKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "ArrowLeft")
+        {
+            leftKeyPressed = false;
+        }
+        else if (e.Key == "ArrowRight")
+        {
+            rightKeyPressed = false;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        gameLoopCancellation?.Cancel();
+        isPlaying = false;
+        if (jsModule != null)
+        {
+            await jsModule.DisposeAsync();
+        }
+        gameLoopCancellation?.Dispose();
+    }
+}
+

@@ -1,0 +1,78 @@
+@using MudBlazor
+@using Microsoft.AspNetCore.Components
+@using Mythetech.Framework.Infrastructure.Plugins.Components
+@inherits PluginContextPanel
+@attribute [PluginComponentMetadata(
+    Icon = Icons.Material.Outlined.Games,
+    Title = "Games",
+    Order = 20)]
+
+@if (selectedGame == null)
+{
+    <div class="d-flex flex-column" style="height: 100%;">
+        <div class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-4">Available Games</MudText>
+            <div class="d-flex flex-wrap gap-3">
+                @foreach (var game in availableGames)
+                {
+                    <div class="game-card" style="width: 280px; cursor: pointer;" onclick="@(() => SelectGame(game))">
+                            <div class="d-flex flex-column align-center text-center">
+                                <MudIcon Icon="@game.Icon" Size="Size.Large" Color="Color.Primary" Class="mb-3" Style="font-size: 48px;" />
+                                <MudText Typo="Typo.h6" Class="mb-2">@game.Name</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">@game.Description</MudText>
+                            </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="d-flex flex-column" style="height: 100%;">
+        <div class="d-flex align-items-center gap-3 pa-3" style="border-bottom: 1px solid var(--mud-palette-divider);">
+            <MudIconButton Icon="@Icons.Material.Rounded.ArrowBack"
+                          Variant="Variant.Text"
+                          Color="Color.Default"
+                          OnClick="GoBack"
+                          Class="rounded-md"
+                          Title="Back to games" />
+            <MudIcon Icon="@selectedGame.Icon" Size="Size.Small" />
+            <MudText Typo="Typo.h6">@selectedGame.Name</MudText>
+        </div>
+        <div class="flex-grow-1" style="overflow: auto;">
+            <DynamicComponent Type="selectedGame.ComponentType" />
+        </div>
+    </div>
+}
+
+@code {
+    public override string Icon { get; } = Icons.Material.Outlined.Games;
+    public override string Title { get; } = "Games";
+
+    private GameInfo? selectedGame;
+    private readonly List<GameInfo> availableGames = new()
+    {
+        new GameInfo
+        {
+            Id = "breakout",
+            Name = "Breakout",
+            Description = "Classic brick-breaking game",
+            Icon = Icons.Material.Outlined.SportsEsports,
+            ComponentType = typeof(BreakoutGame)
+        }
+    };
+
+    private void SelectGame(GameInfo game)
+    {
+        selectedGame = game;
+        StateHasChanged();
+    }
+
+    private void GoBack()
+    {
+        selectedGame = null;
+        StateHasChanged();
+    }
+}
+

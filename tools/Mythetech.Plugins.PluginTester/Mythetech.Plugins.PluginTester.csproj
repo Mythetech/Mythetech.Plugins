@@ -20,6 +20,7 @@
     </ItemGroup>
     
     <ItemGroup>
+        <ProjectReference Include="..\..\src\Mythetech.Plugins.Games\Mythetech.Plugins.Games.csproj" />
         <ProjectReference Include="..\..\src\Mythetech.Plugins.Notes\Mythetech.Plugins.Notes.csproj" />
     </ItemGroup>
 

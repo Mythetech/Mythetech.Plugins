@@ -7,6 +7,8 @@ using Mythetech.Framework.Infrastructure.Plugins;
 using Mythetech.Plugins.Notes;
 using Mythetech.Plugins.PluginTester;
 using Photino.Blazor;
+using NotesManifest = Mythetech.Plugins.Notes.Manifest;
+using GamesManifest = Mythetech.Plugins.Games.Manifest;
 
 var appBuilder = PhotinoBlazorAppBuilder.CreateDefault(args);
 
@@ -30,6 +32,7 @@ app.MainWindow.SetUseOsDefaultLocation(true);
 app.RegisterProvider(app.Services);
 app.Services.UseMessageBus(typeof(Program).Assembly, typeof(IConsumer<>).Assembly);
 
-app.Services.UsePlugin(typeof(Manifest).Assembly);
+app.Services.UsePlugin(typeof(NotesManifest).Assembly);
+app.Services.UsePlugin(typeof(GamesManifest).Assembly);
 
 app.Run();
