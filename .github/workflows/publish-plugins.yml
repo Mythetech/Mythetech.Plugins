@@ -40,12 +40,12 @@ jobs:
             az storage blob upload \
               --account-name "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}" \
               --container-name "${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}" \
-              --name "release/plugins/$plugin_name/$zip_name" \
+              --name "plugins/$plugin_name/$zip_name" \
               --file "release/$zip_name" \
               --sas-token "${{ secrets.AZURE_BLOB_SAS_TOKEN }}" \
               --overwrite
             
-            echo "Uploaded: release/plugins/$plugin_name/$zip_name"
+            echo "Uploaded: plugins/$plugin_name/$zip_name"
           fi
         done
 
