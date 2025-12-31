@@ -15,9 +15,6 @@ jobs:
       with:
         dotnet-version: 10.0.x
 
-    - name: Install Azure CLI
-      uses: azure/setup-az@v1
-
     - name: Restore dependencies
       run: dotnet restore Mythetech.Plugins.sln
 
