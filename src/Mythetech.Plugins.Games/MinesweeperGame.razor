@@ -1,0 +1,338 @@
+@using Microsoft.AspNetCore.Components.Web
+@using MudBlazor
+
+<div class="d-flex flex-column align-center pa-4" style="height: 100%;">
+    <div class="mb-3">
+        <MudText Typo="Typo.h6" Class="text-center mb-2">Minesweeper</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="text-center mb-3">
+            Left-click to reveal, right-click to flag. Find all mines!
+        </MudText>
+        <div class="d-flex justify-center gap-2 mb-3">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NewGame">
+                New Game
+            </MudButton>
+            <MudText Typo="Typo.subtitle1" Class="text-center">
+                Mines: <strong>@(totalMines - flaggedCount)</strong> | 
+                @if (gameWon)
+                {
+                    <span style="color: var(--mud-palette-success);">You Win!</span>
+                }
+                else if (gameLost)
+                {
+                    <span style="color: var(--mud-palette-error);">Game Over</span>
+                }
+            </MudText>
+        </div>
+    </div>
+    <div class="d-flex justify-center" style="flex: 1; width: 100%; align-items: center; overflow: auto;">
+        <div class="minesweeper-grid">
+            @for (int row = 0; row < GridSize; row++)
+            {
+                @for (int col = 0; col < GridSize; col++)
+                {
+                    var cell = grid[row, col];
+                    var rowCopy = row;
+                    var colCopy = col;
+                    <button class="minesweeper-cell @GetCellClass(cell)"
+                            @onclick="@(() => RevealCell(rowCopy, colCopy))"
+                            @oncontextmenu:preventDefault="true"
+                            @oncontextmenu="@(() => ToggleFlag(rowCopy, colCopy))"
+                            disabled="@(cell.IsRevealed || gameWon || gameLost)">
+                        @GetCellContent(cell)
+                    </button>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .minesweeper-grid {
+        display: grid;
+        grid-template-columns: repeat(@GridSize, 30px);
+        gap: 2px;
+        background-color: var(--mud-palette-divider);
+        padding: 2px;
+        border-radius: 4px;
+    }
+
+    .minesweeper-cell {
+        width: 30px;
+        height: 30px;
+        border: none;
+        border-radius: 2px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.1s ease;
+    }
+
+    .minesweeper-cell:not(:disabled):hover {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+
+    .minesweeper-cell:disabled {
+        cursor: default;
+    }
+
+    .cell-hidden {
+        background-color: var(--mud-palette-surface);
+        border: 1px solid var(--mud-palette-divider);
+    }
+
+    .cell-revealed {
+        background-color: var(--mud-palette-background);
+        border: 1px solid var(--mud-palette-divider);
+    }
+
+    .cell-flagged {
+        background-color: var(--mud-palette-warning);
+        color: var(--mud-palette-warning-darken);
+    }
+
+    .cell-mine {
+        background-color: var(--mud-palette-error);
+        color: white;
+    }
+
+    .cell-number-1 { color: #1976d2; }
+    .cell-number-2 { color: #388e3c; }
+    .cell-number-3 { color: #d32f2f; }
+    .cell-number-4 { color: #7b1fa2; }
+    .cell-number-5 { color: #f57c00; }
+    .cell-number-6 { color: #0288d1; }
+    .cell-number-7 { color: #000000; }
+    .cell-number-8 { color: #616161; }
+</style>
+
+@code {
+    private const int GridSize = 10;
+    private const int TotalMines = 15;
+    
+    private MinesweeperCell[,] grid = new MinesweeperCell[GridSize, GridSize];
+    private bool gameWon = false;
+    private bool gameLost = false;
+    private int totalMines = TotalMines;
+    private int flaggedCount = 0;
+    private int revealedCount = 0;
+    private bool firstClick = true;
+
+    protected override void OnInitialized()
+    {
+        NewGame();
+    }
+
+    private void NewGame()
+    {
+        gameWon = false;
+        gameLost = false;
+        flaggedCount = 0;
+        revealedCount = 0;
+        firstClick = true;
+        totalMines = TotalMines;
+
+        for (int row = 0; row < GridSize; row++)
+        {
+            for (int col = 0; col < GridSize; col++)
+            {
+                grid[row, col] = new MinesweeperCell
+                {
+                    IsMine = false,
+                    IsRevealed = false,
+                    IsFlagged = false,
+                    AdjacentMines = 0
+                };
+            }
+        }
+    }
+
+    private void PlaceMines(int excludeRow, int excludeCol)
+    {
+        var random = new Random();
+        int minesPlaced = 0;
+
+        while (minesPlaced < totalMines)
+        {
+            int row = random.Next(GridSize);
+            int col = random.Next(GridSize);
+
+            if ((row == excludeRow && col == excludeCol) || grid[row, col].IsMine)
+                continue;
+
+            grid[row, col].IsMine = true;
+            minesPlaced++;
+        }
+
+        for (int row = 0; row < GridSize; row++)
+        {
+            for (int col = 0; col < GridSize; col++)
+            {
+                if (!grid[row, col].IsMine)
+                {
+                    grid[row, col].AdjacentMines = CountAdjacentMines(row, col);
+                }
+            }
+        }
+    }
+
+    private int CountAdjacentMines(int row, int col)
+    {
+        int count = 0;
+        for (int i = -1; i <= 1; i++)
+        {
+            for (int j = -1; j <= 1; j++)
+            {
+                if (i == 0 && j == 0) continue;
+
+                int newRow = row + i;
+                int newCol = col + j;
+
+                if (newRow >= 0 && newRow < GridSize && newCol >= 0 && newCol < GridSize)
+                {
+                    if (grid[newRow, newCol].IsMine)
+                        count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private void RevealCell(int row, int col)
+    {
+        if (row < 0 || row >= GridSize || col < 0 || col >= GridSize)
+            return;
+
+        if (gameWon || gameLost || grid[row, col].IsRevealed || grid[row, col].IsFlagged)
+            return;
+
+        if (firstClick)
+        {
+            PlaceMines(row, col);
+            firstClick = false;
+        }
+
+        if (grid[row, col].IsMine)
+        {
+            gameLost = true;
+            RevealAllMines();
+            StateHasChanged();
+            return;
+        }
+
+        RevealCellRecursive(row, col);
+        CheckWinCondition();
+        StateHasChanged();
+    }
+
+    private void RevealCellRecursive(int row, int col)
+    {
+        if (row < 0 || row >= GridSize || col < 0 || col >= GridSize)
+            return;
+
+        var cell = grid[row, col];
+        if (cell.IsRevealed || cell.IsFlagged || cell.IsMine)
+            return;
+
+        cell.IsRevealed = true;
+        revealedCount++;
+
+        if (cell.AdjacentMines == 0)
+        {
+            for (int i = -1; i <= 1; i++)
+            {
+                for (int j = -1; j <= 1; j++)
+                {
+                    if (i == 0 && j == 0) continue;
+                    RevealCellRecursive(row + i, col + j);
+                }
+            }
+        }
+    }
+
+    private void ToggleFlag(int row, int col)
+    {
+        if (row < 0 || row >= GridSize || col < 0 || col >= GridSize)
+            return;
+
+        if (gameWon || gameLost || grid[row, col].IsRevealed)
+            return;
+
+        var cell = grid[row, col];
+        if (cell.IsFlagged)
+        {
+            cell.IsFlagged = false;
+            flaggedCount--;
+        }
+        else
+        {
+            cell.IsFlagged = true;
+            flaggedCount++;
+        }
+
+        CheckWinCondition();
+        StateHasChanged();
+    }
+
+    private void RevealAllMines()
+    {
+        for (int row = 0; row < GridSize; row++)
+        {
+            for (int col = 0; col < GridSize; col++)
+            {
+                if (grid[row, col].IsMine)
+                {
+                    grid[row, col].IsRevealed = true;
+                }
+            }
+        }
+    }
+
+    private void CheckWinCondition()
+    {
+        int totalCells = GridSize * GridSize;
+        if (revealedCount == totalCells - totalMines)
+        {
+            gameWon = true;
+        }
+    }
+
+    private string GetCellClass(MinesweeperCell cell)
+    {
+        if (cell.IsFlagged)
+            return "cell-flagged";
+        if (cell.IsRevealed)
+        {
+            if (cell.IsMine)
+                return "cell-mine";
+            return $"cell-revealed cell-number-{cell.AdjacentMines}";
+        }
+        return "cell-hidden";
+    }
+
+    private string GetCellContent(MinesweeperCell cell)
+    {
+        if (cell.IsFlagged)
+            return "🚩";
+        if (cell.IsRevealed)
+        {
+            if (cell.IsMine)
+                return "💣";
+            if (cell.AdjacentMines > 0)
+                return cell.AdjacentMines.ToString();
+        }
+        return "";
+    }
+
+    private class MinesweeperCell
+    {
+        public bool IsMine { get; set; }
+        public bool IsRevealed { get; set; }
+        public bool IsFlagged { get; set; }
+        public int AdjacentMines { get; set; }
+    }
+}
+
