@@ -13,11 +13,11 @@ public class Manifest : IPluginManifest
     public PluginAsset[] Assets =>
     [
         PluginAsset.Css("/_content/PSC.Blazor.Components.MarkdownEditor/css/markdowneditor.css"),
-        PluginAsset.Css("/_content/PSC.Blazor.Components.MarkdownEditor/css/easymde.min.css"),
+
         PluginAsset.Js("/_content/PSC.Blazor.Components.MarkdownEditor/js/easymde.min.js"),
         PluginAsset.Js("/_content/PSC.Blazor.Components.MarkdownEditor/js/markdownEditor.js"),
-        PluginAsset.Js("/_content/PSC.Blazor.Components.MarkdownEditor/js/mermaid.min.js"),
-        PluginAsset.Js("/_content/PSC.Blazor.Components.MarkdownEditor/js/textarearesize.min.js"),
+        //PluginAsset.Js("/_content/PSC.Blazor.Components.MarkdownEditor/js/mermaid.min.js"),
+        //PluginAsset.Js("/_content/PSC.Blazor.Components.MarkdownEditor/js/textarearesize.min.js"),
     ];
 }
 
