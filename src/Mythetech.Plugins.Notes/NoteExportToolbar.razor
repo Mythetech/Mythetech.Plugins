@@ -1,0 +1,55 @@
+@using MudBlazor
+@using System.Text.Json
+@using Microsoft.JSInterop
+@using Mythetech.Framework.Infrastructure.Plugins.Components
+@inherits Mythetech.Framework.Infrastructure.Plugins.Components.PluginMenu
+@inject IJSRuntime JSRuntime
+@attribute [PluginComponentMetadata(
+    Icon = Icons.Material.Outlined.NoteAlt,
+    Title = "Notes",
+    Order = 10)]
+
+@code {
+    public override string Icon { get; } = Icons.Material.Outlined.NoteAlt;
+    public override string Title { get; } = "Notes";
+
+    public override PluginMenuItem[] Items =>
+    [
+        new()
+        {
+            Text = "Export",
+            OnClick = (async (_) => await Export()),
+            Icon = Icons.Material.Outlined.ImportExport
+        },
+    ];
+    
+    public string[] ToolbarMenuItems => ["Export"];
+    
+    private const string NotesStorageKey = "notes";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+
+    public async Task Export()
+    {
+        try
+        {
+            var persistence = Context?.StorageFactory?.CreateForPlugin(ManifestConstants.Id);
+            if (persistence == null) return;
+
+            var notesJson = await persistence.GetAsync<string>(NotesStorageKey);
+            if (string.IsNullOrEmpty(notesJson))
+            {
+                notesJson = JsonSerializer.Serialize(new List<Note>());
+            }
+
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", notesJson);
+        }
+        catch
+        {
+        }
+    }
+}
+
