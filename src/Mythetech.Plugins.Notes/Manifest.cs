@@ -1,4 +1,5 @@
 using System.Reflection;
+using MudBlazor;
 using Mythetech.Framework.Infrastructure.Plugins;
 
 namespace Mythetech.Plugins.Notes;
@@ -10,6 +11,7 @@ public class Manifest : IPluginManifest
     public Version Version { get; } = Assembly.GetExecutingAssembly().GetName().Version!;
     public string Developer { get; } = "Mythetech";
     public string Description { get; } = "Adds an in-application markdown-friendly note editor";
+    public string? Icon { get; } = Icons.Material.Outlined.NoteAlt;
     public PluginAsset[] Assets =>
     [
         PluginAsset.Css("/_content/PSC.Blazor.Components.MarkdownEditor/css/easymde.min.css"),
