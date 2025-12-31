@@ -252,9 +252,15 @@
         StateHasChanged();
     }
 
+    private void OpenEditor()
+    {
+        tabsRef?.SelectTab("Editor");
+    }
+
     private async Task EditNote(Note note)
     {
         await OpenNote(note);
+        OpenEditor();
     }
 
     private async Task CreateNewNote()
@@ -262,11 +268,7 @@
         currentNote = new Note();
         markdownValue = string.Empty;
         StateHasChanged();
-        
-        if (tabsRef != null)
-        {
-            tabsRef.SelectTab("Editor");
-        }
+        OpenEditor();
     }
 
     private void DeleteNote(Note note)
