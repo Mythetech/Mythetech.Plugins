@@ -1,0 +1,69 @@
+@inject PluginState PluginState
+@inject NavigationManager Navigation
+
+<div class="d-flex align-center gap-1">
+    <MudMenu Label="File" 
+             Dense="true" 
+             AnchorOrigin="Origin.BottomLeft" 
+             TransformOrigin="Origin.TopLeft"
+             ActivationEvent="MouseEvent.MouseOver">
+        <MudMenuItem Icon="@Icons.Material.Rounded.FolderOpen" OnClick="OpenPluginFolder">
+            Open Plugin Folder
+        </MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Rounded.Refresh" OnClick="RefreshPlugins">
+            Refresh Plugins
+        </MudMenuItem>
+        <MudDivider />
+        <MudMenuItem Icon="@Icons.Material.Rounded.Close" OnClick="Exit">
+            Exit
+        </MudMenuItem>
+    </MudMenu>
+
+    <StandardPluginMenu MenuText="Plugins"
+                        ListClass="pa-1"
+                        ItemClass="rounded"
+                        ButtonClass="text-transform-none"/>
+
+    <MudMenu Label="View" 
+             Dense="true" 
+             AnchorOrigin="Origin.BottomLeft" 
+             TransformOrigin="Origin.TopLeft"
+             ActivationEvent="MouseEvent.MouseOver">
+        <MudMenuItem Icon="@Icons.Material.Rounded.Dashboard" OnClick="@(() => Navigation.NavigateTo("/"))">
+            Dashboard
+        </MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Rounded.Extension" OnClick="@(() => Navigation.NavigateTo("/plugins"))">
+            Plugin Manager
+        </MudMenuItem>
+    </MudMenu>
+
+    <MudMenu Label="Help" 
+             Dense="true" 
+             AnchorOrigin="Origin.BottomLeft" 
+             TransformOrigin="Origin.TopLeft"
+             ActivationEvent="MouseEvent.MouseOver">
+        <MudMenuItem Icon="@Icons.Material.Rounded.Book">
+            Documentation
+        </MudMenuItem>
+        <MudDivider />
+        <MudMenuItem Icon="@Icons.Material.Rounded.Info">
+            About Plugin Tester
+        </MudMenuItem>
+    </MudMenu>
+</div>
+
+@code {
+    private void OpenPluginFolder()
+    {
+    }
+
+    private void RefreshPlugins()
+    {
+        StateHasChanged();
+    }
+
+    private void Exit()
+    {
+        Environment.Exit(0);
+    }
+}

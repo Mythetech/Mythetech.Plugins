@@ -1,0 +1,50 @@
+@inherits LayoutComponentBase
+@inject PluginState PluginState
+@inject IPluginAssetLoader AssetLoader
+
+<MudLayout Class="main-layout">
+    <MudAppBar Elevation="0" Dense="true" Class="app-bar">
+        <MenuBar />
+        <MudSpacer />
+        <MudText Typo="Typo.subtitle2" Class="mr-4" Color="Color.Secondary">
+            Plugin Tester
+        </MudText>
+        <MudIconButton Icon="@Icons.Material.Rounded.DarkMode" 
+                       Color="Color.Inherit" 
+                       Size="Size.Small"
+                       aria-label="Toggle theme" />
+    </MudAppBar>
+
+    <div class="main-content-area">
+        <div class="main-content">
+            @Body
+        </div>
+        
+        <AppContextPanel />
+    </div>
+</MudLayout>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadPluginAssets();
+        }
+    }
+
+    private async Task LoadPluginAssets()
+    {
+        foreach (var plugin in PluginState.EnabledPlugins)
+        {
+            try
+            {
+                await AssetLoader.LoadPluginAssetsAsync(plugin);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load assets for plugin {plugin.Manifest.Name}: {ex.Message}");
+            }
+        }
+    }
+}

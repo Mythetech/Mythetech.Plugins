@@ -1,0 +1,146 @@
+@page "/"
+@inject PluginState PluginState
+
+<div class="pa-6 mt-8">
+    <div class="d-flex align-center justify-space-between mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Class="mb-1">Plugin Tester Dashboard</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Test and debug your plugins in an isolated environment
+            </MudText>
+        </div>
+        <MudButton Variant="Variant.Filled" 
+                  Color="Color.Primary" 
+                  StartIcon="@Icons.Material.Rounded.Refresh"
+                  OnClick="RefreshPlugins">
+            Refresh
+        </MudButton>
+    </div>
+
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid var(--mud-palette-divider);">
+                <div class="d-flex align-center gap-3 mb-2">
+                    <MudIcon Icon="@Icons.Material.Rounded.Extension" Color="Color.Primary" Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.h5">@_plugins.Count</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Active Plugins</MudText>
+                    </div>
+                </div>
+            </MudPaper>
+        </MudItem>
+        
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid var(--mud-palette-divider);">
+                <div class="d-flex align-center gap-3 mb-2">
+                    <MudIcon Icon="@Icons.Material.Rounded.Widgets" Color="Color.Secondary" Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.h5">@_totalPanels</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Context Panels</MudText>
+                    </div>
+                </div>
+            </MudPaper>
+        </MudItem>
+        
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid var(--mud-palette-divider);">
+                <div class="d-flex align-center gap-3 mb-2">
+                    <MudIcon Icon="@Icons.Material.Rounded.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.h5">Ready</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">System Status</MudText>
+                    </div>
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h6" Class="mt-6 mb-4">Registered Plugins</MudText>
+    
+    @if (_plugins.Any())
+    {
+        <MudGrid>
+            @foreach (var plugin in _plugins)
+            {
+                <MudItem xs="12" md="6" lg="4">
+                    <MudPaper Class="plugin-card pa-4" Elevation="0">
+                        <div class="d-flex align-center gap-3 mb-3">
+                            <MudAvatar Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Medium">
+                                <MudIcon Icon="@(plugin.Manifest.Icon ?? Icons.Material.Rounded.Extension)" />
+                            </MudAvatar>
+                            <div class="flex-grow-1">
+                                <MudText Typo="Typo.subtitle1">@plugin.Manifest.Name</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                     @($"v{plugin.Manifest.Version}")
+                                </MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @plugin.Manifest.Developer
+                                </MudText>
+                            </div>
+                            <div class="plugin-status-badge active">
+                                <MudIcon Icon="@Icons.Material.Rounded.Circle" Size="Size.Small" />
+                                Active
+                            </div>
+                        </div>
+                        
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                            @plugin.Manifest.Description
+                        </MudText>
+                        
+                        <MudDivider Class="mb-3" />
+                        
+                        <div class="d-flex align-center gap-2">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                ID: @plugin.Manifest.Id
+                            </MudText>
+                            <MudSpacer />
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">
+                                @GetComponentCount(plugin) component(s)
+                            </MudChip>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+    else
+    {
+        <MudPaper Class="pa-8" Elevation="0" Style="border: 1px solid var(--mud-palette-divider);">
+            <div class="empty-state">
+                <MudIcon Icon="@Icons.Material.Rounded.ExtensionOff" 
+                        Size="Size.Large" 
+                        Color="Color.Secondary"
+                        Class="mb-4" />
+                <MudText Typo="Typo.h6" Class="mb-2">No Plugins Registered</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                    Register plugins in Program.cs to start testing them.
+                </MudText>
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                    Use <code>app.Services.UsePlugin(typeof(YourManifest).Assembly)</code> to register plugins
+                </MudAlert>
+            </div>
+        </MudPaper>
+    }
+</div>
+
+@code {
+    private List<PluginInfo> _plugins = [];
+    private int _totalPanels;
+
+    protected override void OnInitialized()
+    {
+        RefreshPlugins();
+    }
+
+    private void RefreshPlugins()
+    {
+        _plugins = PluginState.EnabledPlugins.ToList();
+        _totalPanels = PluginState.EnabledContextPanelComponentsMetadata.Count();
+        StateHasChanged();
+    }
+
+    private int GetComponentCount(PluginInfo plugin)
+    {
+        return PluginState.EnabledContextPanelComponentsMetadata.Count();
+    }
+}

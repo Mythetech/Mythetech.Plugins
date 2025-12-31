@@ -6,6 +6,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mythetech.Plugins.Notes.Tes
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Notes", "Notes", "{A185096A-6692-40D5-95C9-5AC105AB8378}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{E9F26D78-2DD9-4610-BE80-C713CE5E0CE6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mythetech.Plugins.PluginTester", "tools\Mythetech.Plugins.PluginTester\Mythetech.Plugins.PluginTester.csproj", "{A8758B0F-25B1-4653-898C-2EBBEDC935F8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,9 +24,14 @@ Global
 		{C9976E4D-8893-4097-B02B-666C8713EAE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C9976E4D-8893-4097-B02B-666C8713EAE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C9976E4D-8893-4097-B02B-666C8713EAE5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8758B0F-25B1-4653-898C-2EBBEDC935F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8758B0F-25B1-4653-898C-2EBBEDC935F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8758B0F-25B1-4653-898C-2EBBEDC935F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8758B0F-25B1-4653-898C-2EBBEDC935F8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{14CF078E-F7A1-48E6-8F75-C62CB97B3EDF} = {A185096A-6692-40D5-95C9-5AC105AB8378}
 		{C9976E4D-8893-4097-B02B-666C8713EAE5} = {A185096A-6692-40D5-95C9-5AC105AB8378}
+		{A8758B0F-25B1-4653-898C-2EBBEDC935F8} = {E9F26D78-2DD9-4610-BE80-C713CE5E0CE6}
 	EndGlobalSection
 EndGlobal

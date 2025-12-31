@@ -1,0 +1,97 @@
+@inject PluginState PluginState
+
+<div class="context-panel">
+    <div class="context-panel-header">
+        @if (_activePanel != null)
+        {
+            <MudIconButton Icon="@Icons.Material.Rounded.ArrowBack" 
+                          Size="Size.Small" 
+                          OnClick="CloseActivePanel"
+                          aria-label="Back to panel list" />
+            <MudIcon Icon="@(_activePanel.Icon ?? Icons.Material.Rounded.Extension)" Size="Size.Small" />
+            <MudText Typo="Typo.subtitle2">@_activePanel.Title</MudText>
+        }
+        else
+        {
+            <MudIcon Icon="@Icons.Material.Rounded.Widgets" Size="Size.Small" />
+            <MudText Typo="Typo.subtitle2">Context Panels</MudText>
+        }
+        <MudSpacer />
+        @if (_activePanel == null)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                @_panels.Count panel(s)
+            </MudText>
+        }
+    </div>
+
+    <div class="context-panel-content">
+        @if (_activePanel != null)
+        {
+            <DynamicComponent Type="_activePanel.ComponentType" />
+        }
+        else
+        {
+            <div class="pa-4">
+                @if (_panels.Any())
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var panel in _panels)
+                        {
+                            <MudButton Variant="Variant.Outlined"
+                                      Color="Color.Primary"
+                                      StartIcon="@(panel.Icon ?? Icons.Material.Rounded.Extension)"
+                                      FullWidth="true"
+                                      Class="justify-start"
+                                      OnClick="@(() => OpenPanel(panel))">
+                                @panel.Title
+                            </MudButton>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <MudIcon Icon="@Icons.Material.Rounded.Widgets" 
+                                Size="Size.Large" 
+                                Color="Color.Secondary" 
+                                Class="mb-4" />
+                        <MudText Typo="Typo.subtitle1" Class="mb-2">No Panels Available</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            Register plugins to see their context panels here.
+                        </MudText>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<PluginComponentMetadata> _panels = [];
+    private PluginComponentMetadata? _activePanel;
+
+    protected override void OnInitialized()
+    {
+        LoadPanels();
+    }
+
+    private void LoadPanels()
+    {
+        _panels = PluginState.EnabledContextPanelComponentsMetadata
+            .OrderBy(p => p.Order)
+            .ToList();
+    }
+
+    private void OpenPanel(PluginComponentMetadata panel)
+    {
+        _activePanel = panel;
+        StateHasChanged();
+    }
+
+    private void CloseActivePanel()
+    {
+        _activePanel = null;
+        StateHasChanged();
+    }
+}

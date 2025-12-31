@@ -1,0 +1,160 @@
+@page "/plugins"
+@inject PluginState PluginState
+
+<div class="pa-6">
+    <div class="d-flex align-center justify-space-between mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Class="mb-1">Plugin Manager</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Manage and inspect loaded plugins
+            </MudText>
+        </div>
+    </div>
+
+    <MudTable Items="@_plugins" 
+              Hover="true" 
+              Striped="true"
+              Elevation="0"
+              Class="border-solid border rounded-lg">
+        <HeaderContent>
+            <MudTh>Plugin</MudTh>
+            <MudTh>Version</MudTh>
+            <MudTh>Developer</MudTh>
+            <MudTh>Components</MudTh>
+            <MudTh>Assets</MudTh>
+            <MudTh>Status</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Plugin">
+                <div class="d-flex align-center gap-2">
+                    <MudIcon Icon="@(context.Manifest.Icon ?? Icons.Material.Rounded.Extension)" 
+                            Size="Size.Small" 
+                            Color="Color.Primary" />
+                    <div>
+                        <MudText Typo="Typo.body1">@context.Manifest.Name</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Manifest.Id</MudText>
+                    </div>
+                </div>
+            </MudTd>
+            <MudTd DataLabel="Version">
+                <MudText Typo="Typo.body2">v@context.Manifest.Version</MudText>
+            </MudTd>
+            <MudTd DataLabel="Developer">
+                <MudText Typo="Typo.body2">@context.Manifest.Developer</MudText>
+            </MudTd>
+            <MudTd DataLabel="Components">
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">
+                    @GetComponentCount()
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Assets">
+                <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Variant="Variant.Text">
+                    @context.Manifest.Assets.Length
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled">
+                    Active
+                </MudChip>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <div class="pa-4 text-center">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    No plugins registered
+                </MudText>
+            </div>
+        </NoRecordsContent>
+    </MudTable>
+
+    @if (_plugins.Any())
+    {
+        <MudText Typo="Typo.h6" Class="mt-6 mb-4">Plugin Details</MudText>
+        
+        <MudExpansionPanels Elevation="0" Class="border-solid border rounded-lg">
+            @foreach (var plugin in _plugins)
+            {
+                <MudExpansionPanel>
+                    <TitleContent>
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@(plugin.Manifest.Icon ?? Icons.Material.Rounded.Extension)" 
+                                    Size="Size.Small" />
+                            <MudText>@plugin.Manifest.Name</MudText>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        <div class="pa-2">
+                            <MudText Typo="Typo.body2" Class="mb-4">@plugin.Manifest.Description</MudText>
+                            
+                            <MudText Typo="Typo.subtitle2" Class="mb-2">Components</MudText>
+                            @{
+                                var components = PluginState.EnabledContextPanelComponentsMetadata.ToList();
+                            }
+                            @if (components.Any())
+                            {
+                                <MudList T="string" Dense="true">
+                                    @foreach (var component in components)
+                                    {
+                                        <MudListItem Icon="@(component.Icon ?? Icons.Material.Rounded.Widgets)">
+                                            <div class="d-flex align-center justify-space-between w-100">
+                                                <MudText Typo="Typo.body2">
+                                                    @(component.Title ?? component.ComponentType.Name)
+                                                </MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                    @component.ComponentType.FullName
+                                                </MudText>
+                                            </div>
+                                        </MudListItem>
+                                    }
+                                </MudList>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    No components registered
+                                </MudText>
+                            }
+
+                            @if (plugin.Manifest.Assets.Any())
+                            {
+                                <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Assets</MudText>
+                                <MudList T="string" Dense="true">
+                                    @foreach (var asset in plugin.Manifest.Assets)
+                                    {
+                                        <MudListItem Icon="@GetAssetIcon(asset)">
+                                            <MudText Typo="Typo.body2">@asset.Path</MudText>
+                                        </MudListItem>
+                                    }
+                                </MudList>
+                            }
+                        </div>
+                    </ChildContent>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanels>
+    }
+</div>
+
+@code {
+    private List<PluginInfo> _plugins = [];
+
+    protected override void OnInitialized()
+    {
+        _plugins = PluginState.EnabledPlugins.ToList();
+    }
+
+    private int GetComponentCount()
+    {
+        return PluginState.EnabledContextPanelComponentsMetadata.Count();
+    }
+
+    private string GetAssetIcon(PluginAsset asset)
+    {
+        return asset.Type switch
+        {
+            PluginAssetType.Css => Icons.Material.Rounded.Style,
+            PluginAssetType.JavaScript => Icons.Material.Rounded.Code,
+            _ => Icons.Material.Rounded.InsertDriveFile
+        };
+    }
+}

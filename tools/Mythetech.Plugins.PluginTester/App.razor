@@ -1,0 +1,84 @@
+@inject PluginState PluginState
+
+<MudThemeProvider @ref="_themeProvider" Theme="_theme" IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <div class="empty-state">
+                <MudIcon Icon="@Icons.Material.Rounded.Warning" Size="Size.Large" Color="Color.Warning" />
+                <MudText Typo="Typo.h5" Class="mt-4">Page Not Found</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">
+                    The page you're looking for doesn't exist.
+                </MudText>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+@code {
+    private MudThemeProvider? _themeProvider;
+    private bool _isDarkMode = true;
+
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#7c3aed",
+            Secondary = "#06b6d4",
+            Tertiary = "#f59e0b",
+            AppbarBackground = "#ffffff",
+            Background = "#f5f5f5",
+            Surface = "#ffffff",
+            DrawerBackground = "#ffffff",
+            DrawerText = "#424242",
+            Success = "#10b981",
+            Warning = "#f59e0b",
+            Error = "#ef4444",
+            Info = "#3b82f6"
+        },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#a78bfa",
+            Secondary = "#22d3ee",
+            Tertiary = "#fbbf24",
+            AppbarBackground = "#1e1e2d",
+            Background = "#121212",
+            Surface = "#1e1e2d",
+            DrawerBackground = "#1e1e2d",
+            DrawerText = "#e0e0e0",
+            Success = "#34d399",
+            Warning = "#fbbf24",
+            Error = "#f87171",
+            Info = "#60a5fa",
+            TextPrimary = "#e0e0e0",
+            TextSecondary = "#a0a0a0"
+        },
+        Typography = new Typography
+        {
+            Default = new DefaultTypography
+            {
+                FontFamily = ["Segoe UI", "Roboto", "-apple-system", "BlinkMacSystemFont", "sans-serif"]
+            }
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DefaultBorderRadius = "8px"
+        }
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _themeProvider != null)
+        {
+            _isDarkMode = await _themeProvider.GetSystemDarkModeAsync();
+            StateHasChanged();
+        }
+    }
+}
