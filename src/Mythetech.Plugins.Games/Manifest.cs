@@ -11,7 +11,9 @@ public class Manifest : IPluginManifest
     public string Developer { get; } = "Mythetech";
     public string Description { get; } = "A collection of fun, simple single-player games";
     public string? Icon { get; } = Icons.Material.Outlined.Games;
-    public PluginAsset[] Assets => [];
+    public PluginAsset[] Assets => [
+        PluginAsset.Js("/breakout.js"), 
+    ];  
 }
 
 public static class ManifestConstants

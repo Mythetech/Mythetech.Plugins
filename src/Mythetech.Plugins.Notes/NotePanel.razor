@@ -14,26 +14,31 @@
 <SimpleTabs @ref="tabsRef">
     <Tab Icon="@Icons.Material.Rounded.EditNote" Name="Editor">
         <div class="d-flex flex-column" style="height: 100%;">
-            <div class="d-flex align-items-center gap-3 pa-3" style="border-bottom: 1px solid var(--mud-palette-divider);">
+            <MudStack Row="true" AlignItems="AlignItems.End" Class="d-flex pa-3" Style="border-bottom: 1px solid var(--mud-palette-divider);">
                 <MudTextField @bind-Value="currentNote.Name"
                               Label="Note Name"
-                              Variant="Variant.Outlined"
+                              Variant="Variant.Text"
                               Class="flex-grow-1"
                               Style="max-width: 300px;"
                               Immediate="true" />
-                <MudIconButton Icon="@Icons.Material.Rounded.ContentCopy"
-                              Variant="Variant.Text"
-                              Color="Color.Default"
-                              OnClick="CopyToClipboard"
-                              Class="rounded-md"
-                              Title="Copy to clipboard" />
+                <MudTooltip Text="Copy to clipboard">
+                    <MudIconButton Icon="@Icons.Material.Rounded.ContentCopy"
+                                   Variant="Variant.Text"
+                                   Color="Color.Default"
+                                   OnClick="CopyToClipboard"
+                                   Class="rounded-md"
+                                   Size="Size.Small" />
+                </MudTooltip>
+                <MudTooltip Text="Save note">
                 <MudIconButton Icon="@Icons.Material.Rounded.Save"
-                              Variant="Variant.Filled"
-                              Color="Color.Primary"
-                              OnClick="SaveNote"
-                              Class="rounded-md"
-                              Title="Save note" />
-            </div>
+                            Variant="Variant.Text"
+                            Color="Color.Primary"
+                            OnClick="SaveNote"
+                            Class="rounded-md"
+                            Size="Size.Small"
+                            Title="Save note" />
+                </MudTooltip>
+            </MudStack>
             <div class="flex-grow-1" style="overflow: auto;">
                 <MarkdownEditor @bind-Value="markdownValue"
                                 ValueHTMLChanged="@OnMarkdownValueHTMLChanged" />
@@ -46,14 +51,18 @@
             _ = ReloadNotesIfNeeded();
         }
         <div class="d-flex flex-column" style="height: 100%;">
-            <div class="d-flex justify-end pa-3" style="border-bottom: 1px solid var(--mud-palette-divider);">
-                <MudIconButton Icon="@Icons.Material.Rounded.Add"
-                              Variant="Variant.Filled"
-                              Color="Color.Primary"
-                              OnClick="CreateNewNote"
-                              Class="rounded-md"
-                              Title="Create new note" />
-            </div>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" class="d-flex justify-between pa-3" style="border-bottom: 1px solid var(--mud-palette-divider);">
+                <MudText Typo="Typo.h6" Class="mud-text-secondary">@($"{notes?.Count ?? 0} Note{(notes?.Count == 1 ? "" : "s")}")</MudText>
+                <MudButton
+                    Variant="Variant.Filled"
+                    Color="Color.Primary"
+                    OnClick="CreateNewNote"
+                    Size="Size.Small"
+                    Class="rounded-md">
+                    <MudIcon Icon="@Icons.Material.Rounded.Add"/>
+                    Create note
+                </MudButton>
+            </MudStack>
             <div class="flex-grow-1" style="overflow: auto;">
                 <div class="pa-4">
             @if (notes == null)
