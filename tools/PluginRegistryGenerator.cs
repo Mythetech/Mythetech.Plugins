@@ -30,14 +30,18 @@ if (!Directory.Exists(srcDir))
 }
 
 var pluginDirs = Directory.GetDirectories(srcDir, "Mythetech.Plugins.*");
+Console.WriteLine($"Found {pluginDirs.Length} plugin directory(ies)");
 foreach (var pluginDir in pluginDirs)
 {
     var projectName = Path.GetFileName(pluginDir);
+    Console.WriteLine($"Processing: {projectName}");
 
     var configuration = Environment.GetEnvironmentVariable("PLUGIN_BUILD_CONFIGURATION")
         ?? (Directory.Exists(Path.Combine(pluginDir, "bin", "Release")) ? "Release" : "Debug");
+    Console.WriteLine($"  Configuration: {configuration}");
 
     var dllPath = Path.Combine(pluginDir, "bin", configuration, "net10.0", $"{projectName}.dll");
+    Console.WriteLine($"  Looking for DLL: {dllPath}");
 
     if (!File.Exists(dllPath))
     {
@@ -58,12 +62,24 @@ foreach (var pluginDir in pluginDirs)
     try
     {
         var assembly = Assembly.LoadFrom(dllPath);
-        var manifestType = assembly.GetTypes()
+        Console.WriteLine($"  Loaded assembly: {assembly.FullName}");
+        var allTypes = assembly.GetTypes();
+        Console.WriteLine($"  Found {allTypes.Length} type(s) in assembly");
+        var manifestType = allTypes
             .FirstOrDefault(t => t.Name == "Manifest" && typeof(IPluginManifest).IsAssignableFrom(t));
 
         if (manifestType == null)
         {
             Console.WriteLine($"WARNING: Could not find Manifest class in {projectName}");
+            var manifestTypes = allTypes.Where(t => t.Name == "Manifest").ToList();
+            if (manifestTypes.Any())
+            {
+                Console.WriteLine($"  Found {manifestTypes.Count} type(s) named 'Manifest' but none implement IPluginManifest");
+                foreach (var mt in manifestTypes)
+                {
+                    Console.WriteLine($"    - {mt.FullName} (implements IPluginManifest: {typeof(IPluginManifest).IsAssignableFrom(mt)})");
+                }
+            }
             continue;
         }
 
@@ -92,6 +108,12 @@ foreach (var pluginDir in pluginDirs)
     catch (Exception ex)
     {
         Console.WriteLine($"ERROR: Failed to load {projectName}: {ex.Message}");
+        Console.WriteLine($"  Exception type: {ex.GetType().FullName}");
+        if (ex.InnerException != null)
+        {
+            Console.WriteLine($"  Inner exception: {ex.InnerException.Message}");
+        }
+        Console.WriteLine($"  Stack trace: {ex.StackTrace}");
     }
 }
 
