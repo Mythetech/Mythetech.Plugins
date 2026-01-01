@@ -13,8 +13,12 @@ if (solutionRoot == null)
     Environment.Exit(1);
 }
 
-var cdnBase = Environment.GetEnvironmentVariable("PLUGIN_CDN_BASE_URL")
-    ?? "https://cdn-endpnt-stmythetechglobal.azureedge.net";
+var cdnBase = Environment.GetEnvironmentVariable("PUBLIC_STORAGE_CDN_PREFIX");
+if (string.IsNullOrEmpty(cdnBase))
+{
+    Console.Error.WriteLine("ERROR: PUBLIC_STORAGE_CDN_PREFIX environment variable is required");
+    Environment.Exit(1);
+}
 
 var plugins = new List<PluginInfo>();
 

@@ -24,8 +24,18 @@ jobs:
     - name: Generate plugin registry
       run: dotnet run --file tools/PluginRegistryGenerator.cs
       env:
-        PLUGIN_CDN_BASE_URL: ${{ secrets.PLUGIN_CDN_BASE_URL || 'https://cdn-endpnt-stmythetechglobal.azureedge.net' }}
+        PUBLIC_STORAGE_CDN_PREFIX: ${{ secrets.PUBLIC_STORAGE_CDN_PREFIX }}
         PLUGIN_BUILD_CONFIGURATION: Release
+
+    - name: Upload plugin registry
+      run: |
+        az storage blob upload \
+          --account-name "${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}" \
+          --container-name "${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}" \
+          --name "plugins/mythetech-plugin-registry.json" \
+          --file "mythetech-plugin-registry.json" \
+          --sas-token "${{ secrets.AZURE_BLOB_SAS_TOKEN }}" \
+          --overwrite
 
     - name: Publish and package plugins
       run: |
