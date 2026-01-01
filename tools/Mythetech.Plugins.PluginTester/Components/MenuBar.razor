@@ -1,5 +1,7 @@
+@using Mythetech.Framework.Infrastructure.Files
 @inject PluginState PluginState
 @inject NavigationManager Navigation
+@inject IShowFileService ShowFileService
 
 <div class="d-flex align-center gap-1">
     <MudMenu Label="File" 
@@ -53,8 +55,11 @@
 </div>
 
 @code {
-    private void OpenPluginFolder()
+    private async Task OpenPluginFolder()
     {
+        if(string.IsNullOrWhiteSpace(PluginState?.PluginDirectory)) return;
+        
+        await ShowFileService.ShowFolderAsync(PluginState.PluginDirectory);
     }
 
     private void RefreshPlugins()

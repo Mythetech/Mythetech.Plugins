@@ -2,6 +2,7 @@
 using MudBlazor.Services;
 using Mythetech.Framework.Desktop;
 using Mythetech.Framework.Desktop.Photino;
+using Mythetech.Framework.Infrastructure.Files;
 using Mythetech.Framework.Infrastructure.MessageBus;
 using Mythetech.Framework.Infrastructure.Plugins;
 using Mythetech.Plugins.Notes;
@@ -19,6 +20,7 @@ appBuilder.Services.AddPhotinoServices();
 appBuilder.Services.AddLinkOpenService();
 appBuilder.Services.AddPluginStorage();
 appBuilder.Services.AddPluginFramework();
+appBuilder.Services.AddShowFileService();
 
 appBuilder.RootComponents.Add<App>("#app");
 
@@ -32,6 +34,7 @@ app.MainWindow.SetUseOsDefaultLocation(true);
 app.RegisterProvider(app.Services);
 app.Services.UseMessageBus(typeof(Program).Assembly, typeof(IConsumer<>).Assembly);
 
+app.Services.UsePlugins();
 app.Services.UsePlugin(typeof(NotesManifest).Assembly);
 app.Services.UsePlugin(typeof(GamesManifest).Assembly);
 

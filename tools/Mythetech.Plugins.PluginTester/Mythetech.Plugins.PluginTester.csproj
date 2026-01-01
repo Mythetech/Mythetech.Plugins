@@ -14,8 +14,8 @@
 
     <ItemGroup>
         <PackageReference Include="MudBlazor" Version="8.14.0" />
-        <PackageReference Include="Mythetech.Framework" Version="0.1.14" />
-        <PackageReference Include="Mythetech.Framework.Desktop" Version="0.1.2" />
+        <PackageReference Include="Mythetech.Framework" Version="0.2.1" />
+        <PackageReference Include="Mythetech.Framework.Desktop" Version="0.2.1" />
         <PackageReference Include="Photino.Blazor" Version="4.0.13" />
     </ItemGroup>
     
