@@ -1,4 +1,3 @@
-using System.Reflection;
 using MudBlazor;
 using Mythetech.Framework.Infrastructure.Plugins;
 
@@ -8,7 +7,7 @@ public class Manifest : IPluginManifest
 {
     public string Id { get; } = ManifestConstants.Id;
     public string Name { get; } = "Games";
-    public Version Version { get; } = Assembly.GetExecutingAssembly().GetName().Version!;
+    public Version Version { get; } = new Version(1, 0, 0);
     public string Developer { get; } = "Mythetech";
     public string Description { get; } = "A collection of fun, simple single-player games";
     public string? Icon { get; } = Icons.Material.Outlined.Games;

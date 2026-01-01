@@ -21,6 +21,12 @@ jobs:
     - name: Build plugins
       run: dotnet build Mythetech.Plugins.sln --configuration Release --no-restore
 
+    - name: Generate plugin registry
+      run: dotnet run --file tools/PluginRegistryGenerator.cs
+      env:
+        PLUGIN_CDN_BASE_URL: ${{ secrets.PLUGIN_CDN_BASE_URL || 'https://cdn-endpnt-stmythetechglobal.azureedge.net' }}
+        PLUGIN_BUILD_CONFIGURATION: Release
+
     - name: Publish and package plugins
       run: |
         for project in src/*/*.csproj; do

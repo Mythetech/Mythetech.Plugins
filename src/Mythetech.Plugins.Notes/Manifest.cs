@@ -1,4 +1,3 @@
-using System.Reflection;
 using MudBlazor;
 using Mythetech.Framework.Infrastructure.Plugins;
 
@@ -8,7 +7,7 @@ public class Manifest : IPluginManifest
 {
     public string Id { get; } = ManifestConstants.Id;
     public string Name { get; } = "Notes";
-    public Version Version { get; } = Assembly.GetExecutingAssembly().GetName().Version!;
+    public Version Version { get; } = new Version(1, 0, 0);
     public string Developer { get; } = "Mythetech";
     public string Description { get; } = "Adds an in-application markdown-friendly note editor";
     public string? Icon { get; } = Icons.Material.Outlined.NoteAlt;

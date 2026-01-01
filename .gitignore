@@ -418,3 +418,6 @@ FodyWeavers.xsd
 *.msp
 *.DS_Store
 .idea/
+
+# Generated plugin registry
+mythetech-plugin-registry.json
