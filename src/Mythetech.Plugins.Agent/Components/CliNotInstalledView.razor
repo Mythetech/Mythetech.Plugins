@@ -1,0 +1,50 @@
+@using MudBlazor
+
+<div class="d-flex flex-column align-center justify-center pa-8" style="height: 100%;">
+    <MudIcon Icon="@Icons.Material.Outlined.CloudOff"
+             Size="Size.Large"
+             Color="Color.Warning"
+             Class="mb-4"
+             Style="font-size: 64px;" />
+
+    <MudText Typo="Typo.h5" Class="mb-2">Claude CLI Not Found</MudText>
+    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4 text-center">
+        The Claude CLI needs to be installed to use this plugin.
+    </MudText>
+
+    <MudPaper Class="pa-4 mb-4" Style="max-width: 600px; width: 100%;" Elevation="0" Outlined="true">
+        <MudText Typo="Typo.body2" Style="white-space: pre-wrap; font-family: var(--mud-typography-body2-family);">
+            @((MarkupString)FormatInstructions(Instructions))
+        </MudText>
+    </MudPaper>
+
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               StartIcon="@Icons.Material.Outlined.Refresh"
+               OnClick="OnRetryCheck">
+        Check Again
+    </MudButton>
+</div>
+
+@code {
+    [Parameter] public string Instructions { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnRetryCheck { get; set; }
+
+    private string FormatInstructions(string markdown)
+    {
+        if (string.IsNullOrEmpty(markdown)) return string.Empty;
+
+        // Simple markdown to HTML conversion for code blocks and headers
+        var html = markdown
+            .Replace("## ", "<strong>")
+            .Replace("\n\n", "</strong><br/><br/>")
+            .Replace("```bash\n", "<code style='display:block; background: var(--mud-palette-background-grey); padding: 8px; border-radius: 4px; margin: 8px 0;'>")
+            .Replace("```powershell\n", "<code style='display:block; background: var(--mud-palette-background-grey); padding: 8px; border-radius: 4px; margin: 8px 0;'>")
+            .Replace("```\n", "</code>")
+            .Replace("```", "</code>")
+            .Replace("**", "<strong>")
+            .Replace("\n", "<br/>");
+
+        return html;
+    }
+}

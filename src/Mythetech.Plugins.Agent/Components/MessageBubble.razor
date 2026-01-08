@@ -1,0 +1,92 @@
+@using MudBlazor
+@using Mythetech.Plugins.Agent.Models
+
+<div class="message-bubble @GetBubbleClass() mb-3">
+    <div class="d-flex align-center gap-2 mb-1">
+        <MudIcon Icon="@GetRoleIcon()" Size="Size.Small" Color="@GetRoleColor()" />
+        <MudText Typo="Typo.caption" Color="Color.Secondary">@GetRoleName()</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-auto">
+            @Message.Timestamp.ToLocalTime().ToString("HH:mm")
+        </MudText>
+    </div>
+
+    <div class="message-content">
+        @if (IsStreaming)
+        {
+            <MudText Typo="Typo.body2" Style="white-space: pre-wrap;">@StreamingContent</MudText>
+            <MudProgressLinear Indeterminate="true" Size="Size.Small" Class="mt-2" Color="Color.Primary" />
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Style="white-space: pre-wrap;">@Message.Content</MudText>
+        }
+    </div>
+</div>
+
+<style>
+    .message-bubble {
+        padding: 12px 16px;
+        border-radius: 8px;
+        max-width: 85%;
+    }
+
+    .message-bubble.user {
+        background-color: var(--mud-palette-primary);
+        color: var(--mud-palette-primary-text);
+        margin-left: auto;
+    }
+
+    .message-bubble.assistant {
+        background-color: var(--mud-palette-surface);
+        border: 1px solid var(--mud-palette-divider);
+        margin-right: auto;
+    }
+
+    .message-bubble.system {
+        background-color: var(--mud-palette-warning-lighten);
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .message-content {
+        word-break: break-word;
+    }
+</style>
+
+@code {
+    [Parameter] public ChatMessage Message { get; set; } = new();
+    [Parameter] public string StreamingContent { get; set; } = string.Empty;
+    [Parameter] public bool IsStreaming { get; set; }
+
+    private string GetBubbleClass() => Message.Role switch
+    {
+        MessageRole.User => "user",
+        MessageRole.Assistant => "assistant",
+        MessageRole.System => "system",
+        _ => "assistant"
+    };
+
+    private string GetRoleIcon() => Message.Role switch
+    {
+        MessageRole.User => Icons.Material.Outlined.Person,
+        MessageRole.Assistant => Icons.Material.Outlined.SmartToy,
+        MessageRole.System => Icons.Material.Outlined.Info,
+        _ => Icons.Material.Outlined.QuestionMark
+    };
+
+    private Color GetRoleColor() => Message.Role switch
+    {
+        MessageRole.User => Color.Primary,
+        MessageRole.Assistant => Color.Secondary,
+        MessageRole.System => Color.Warning,
+        _ => Color.Default
+    };
+
+    private string GetRoleName() => Message.Role switch
+    {
+        MessageRole.User => "You",
+        MessageRole.Assistant => "Claude",
+        MessageRole.System => "System",
+        _ => "Unknown"
+    };
+}

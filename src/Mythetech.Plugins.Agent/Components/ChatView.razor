@@ -1,0 +1,60 @@
+@using MudBlazor
+@using Mythetech.Plugins.Agent.Models
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+
+<div @ref="chatContainer" class="chat-view d-flex flex-column pa-4" style="height: 100%; overflow-y: auto;">
+    @if (!Messages.Any() && !IsStreaming)
+    {
+        <div class="d-flex flex-column align-center justify-center" style="height: 100%;">
+            <MudIcon Icon="@Icons.Material.Outlined.Chat" Size="Size.Large" Color="Color.Secondary" Class="mb-4" Style="font-size: 48px;" />
+            <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mb-2">Start a conversation</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Type a message below to chat with Claude</MudText>
+        </div>
+    }
+    else
+    {
+        @foreach (var message in Messages)
+        {
+            <MessageBubble Message="@message" />
+        }
+
+        @if (IsStreaming)
+        {
+            <MessageBubble Message="@streamingMessage"
+                          StreamingContent="@StreamingContent"
+                          IsStreaming="true" />
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public List<ChatMessage> Messages { get; set; } = new();
+    [Parameter] public bool IsStreaming { get; set; }
+    [Parameter] public string StreamingContent { get; set; } = string.Empty;
+
+    private ElementReference chatContainer;
+    private ChatMessage streamingMessage = new()
+    {
+        Role = MessageRole.Assistant,
+        Timestamp = DateTime.UtcNow
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await ScrollToBottom();
+    }
+
+    private async Task ScrollToBottom()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("eval",
+                "document.querySelector('.chat-view')?.scrollTo({ top: document.querySelector('.chat-view')?.scrollHeight, behavior: 'smooth' })");
+        }
+        catch
+        {
+            // Ignore scroll errors
+        }
+    }
+}

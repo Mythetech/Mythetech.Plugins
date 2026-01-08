@@ -1,0 +1,68 @@
+@using MudBlazor
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="chat-input d-flex gap-2 align-end">
+    <MudTextField @bind-Value="message"
+                  Placeholder="Type your message..."
+                  Variant="Variant.Outlined"
+                  Lines="2"
+                  AutoGrow="true"
+                  MaxLines="6"
+                  Disabled="@IsDisabled"
+                  Immediate="true"
+                  Class="flex-grow-1"
+                  OnKeyDown="HandleKeyDown" />
+
+    @if (IsDisabled)
+    {
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Error"
+                   OnClick="OnCancel"
+                   Class="rounded-md"
+                   Style="min-width: 100px; height: 56px;">
+            <MudIcon Icon="@Icons.Material.Outlined.Stop" Class="mr-1" />
+            Cancel
+        </MudButton>
+    }
+    else
+    {
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="SendMessage"
+                   Disabled="@string.IsNullOrWhiteSpace(message)"
+                   Class="rounded-md"
+                   Style="min-width: 100px; height: 56px;">
+            <MudIcon Icon="@Icons.Material.Outlined.Send" Class="mr-1" />
+            Send
+        </MudButton>
+    }
+</div>
+
+<MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+    Press Enter to send, Shift+Enter for new line
+</MudText>
+
+@code {
+    [Parameter] public EventCallback<string> OnSend { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public bool IsDisabled { get; set; }
+
+    private string message = string.Empty;
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(message)) return;
+
+        var messageToSend = message;
+        message = string.Empty;
+        await OnSend.InvokeAsync(messageToSend);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+}

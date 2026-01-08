@@ -14,12 +14,13 @@
 
     <ItemGroup>
         <PackageReference Include="MudBlazor" Version="8.14.0" />
-        <PackageReference Include="Mythetech.Framework" Version="0.2.1" />
-        <PackageReference Include="Mythetech.Framework.Desktop" Version="0.2.1" />
+        <PackageReference Include="Mythetech.Framework" Version="0.2.8" />
+        <PackageReference Include="Mythetech.Framework.Desktop" Version="0.2.8" />
         <PackageReference Include="Photino.Blazor" Version="4.0.13" />
     </ItemGroup>
     
     <ItemGroup>
+        <ProjectReference Include="..\..\src\Mythetech.Plugins.Agent\Mythetech.Plugins.Agent.csproj" />
         <ProjectReference Include="..\..\src\Mythetech.Plugins.Games\Mythetech.Plugins.Games.csproj" />
         <ProjectReference Include="..\..\src\Mythetech.Plugins.Notes\Mythetech.Plugins.Notes.csproj" />
     </ItemGroup>

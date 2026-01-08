@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using Mythetech.Framework.Desktop;
+using Mythetech.Framework.Desktop.Environment;
 using Mythetech.Framework.Desktop.Photino;
 using Mythetech.Framework.Infrastructure.Files;
 using Mythetech.Framework.Infrastructure.MessageBus;
@@ -10,6 +11,7 @@ using Mythetech.Plugins.PluginTester;
 using Photino.Blazor;
 using NotesManifest = Mythetech.Plugins.Notes.Manifest;
 using GamesManifest = Mythetech.Plugins.Games.Manifest;
+using AgentManifest = Mythetech.Plugins.Agent.Manifest;
 
 var appBuilder = PhotinoBlazorAppBuilder.CreateDefault(args);
 
@@ -17,6 +19,7 @@ appBuilder.Services.AddLogging();
 appBuilder.Services.AddMudServices();
 appBuilder.Services.AddMessageBus();
 appBuilder.Services.AddPhotinoServices();
+appBuilder.Services.AddRuntimeEnvironment(DesktopRuntimeEnvironment.Development());
 appBuilder.Services.AddLinkOpenService();
 appBuilder.Services.AddPluginStorage();
 appBuilder.Services.AddPluginFramework();
@@ -37,5 +40,6 @@ app.Services.UseMessageBus(typeof(Program).Assembly, typeof(IConsumer<>).Assembl
 app.Services.UsePlugins();
 app.Services.UsePlugin(typeof(NotesManifest).Assembly);
 app.Services.UsePlugin(typeof(GamesManifest).Assembly);
+app.Services.UsePlugin(typeof(AgentManifest).Assembly);
 
 app.Run();
