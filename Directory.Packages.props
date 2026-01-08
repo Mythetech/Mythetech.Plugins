@@ -1,0 +1,22 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Mythetech Framework -->
+    <PackageVersion Include="Mythetech.Framework" Version="0.2.9" />
+    <PackageVersion Include="Mythetech.Framework.Desktop" Version="0.2.9" />
+
+    <!-- UI -->
+    <PackageVersion Include="MudBlazor" Version="8.14.0" />
+    <PackageVersion Include="PSC.Blazor.Components.MarkdownEditor" Version="8.0.8" />
+    <PackageVersion Include="Photino.Blazor" Version="4.0.13" />
+
+    <!-- Testing -->
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+</Project>

@@ -13,10 +13,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="MudBlazor" Version="8.14.0" />
-        <PackageReference Include="Mythetech.Framework" Version="0.2.8" />
-        <PackageReference Include="Mythetech.Framework.Desktop" Version="0.2.8" />
-        <PackageReference Include="Photino.Blazor" Version="4.0.13" />
+        <PackageReference Include="MudBlazor" />
+        <PackageReference Include="Mythetech.Framework" />
+        <PackageReference Include="Mythetech.Framework.Desktop" />
+        <PackageReference Include="Photino.Blazor" />
     </ItemGroup>
     
     <ItemGroup>

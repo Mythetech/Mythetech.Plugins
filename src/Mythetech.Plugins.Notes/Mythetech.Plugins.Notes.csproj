@@ -7,8 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Mythetech.Framework" Version="0.2.8" />
-      <PackageReference Include="PSC.Blazor.Components.MarkdownEditor" Version="8.0.8" />
+      <PackageReference Include="Mythetech.Framework" />
+      <PackageReference Include="PSC.Blazor.Components.MarkdownEditor" />
     </ItemGroup>
 
 </Project>
