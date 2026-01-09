@@ -1,6 +1,9 @@
 @using MudBlazor
+@using Microsoft.Extensions.DependencyInjection
 @using Microsoft.Extensions.Logging
 @using Microsoft.Extensions.Logging.Abstractions
+@using Mythetech.Framework.Infrastructure.Mcp
+@using Mythetech.Framework.Infrastructure.Plugins
 @using Mythetech.Framework.Infrastructure.Plugins.Components
 @using Mythetech.Plugins.Agent.Models
 @using Mythetech.Plugins.Agent.Services
@@ -9,6 +12,7 @@
     Icon = Icons.Material.Outlined.SmartToy,
     Title = "Claude Agent",
     Order = 5)]
+@inject IServiceProvider ServiceProvider
 
 @if (!_isCliInstalled.HasValue)
 {
@@ -23,24 +27,47 @@ else if (!_isCliInstalled.Value)
 }
 else
 {
-    <div class="agent-panel d-flex flex-column" style="height: 100%;">
-        @if (!string.IsNullOrEmpty(_errorMessage))
+    <div class="agent-panel d-flex" style="height: 100%;">
+        @* MCP Server Panel (collapsible sidebar) *@
+        @if (_showMcpPanel)
         {
-            <MudAlert Severity="Severity.Error" Class="ma-2" ShowCloseIcon="true" CloseIconClicked="() => _errorMessage = null">
-                @_errorMessage
-            </MudAlert>
+            <div class="mcp-sidebar" style="width: 280px; border-right: 1px solid var(--mud-palette-divider); overflow-y: auto;">
+                <McpServerPanel McpService="_mcpConfigService" />
+            </div>
         }
 
-        <div class="flex-grow-1" style="overflow: hidden;">
-            <ChatView Messages="@_currentConversation.Messages"
-                     IsStreaming="@_isStreaming"
-                     StreamingContent="@_streamingContent" />
-        </div>
+        @* Main chat area *@
+        <div class="d-flex flex-column flex-grow-1" style="min-width: 0;">
+            @* Toolbar *@
+            <div class="d-flex align-center pa-2 gap-2" style="border-bottom: 1px solid var(--mud-palette-divider);">
+                <MudIconButton Icon="@(_showMcpPanel ? Icons.Material.Filled.ChevronLeft : Icons.Material.Outlined.Extension)"
+                               Size="Size.Small"
+                               OnClick="ToggleMcpPanel"
+                               Title="@(_showMcpPanel ? "Hide MCP Servers" : "Show MCP Servers")" />
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    @GetMcpStatusText()
+                </MudText>
+                <MudSpacer />
+            </div>
 
-        <div class="pa-3" style="border-top: 1px solid var(--mud-palette-divider);">
-            <ChatInput OnSend="SendMessage"
-                      IsDisabled="@_isStreaming"
-                      OnCancel="CancelRequest" />
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="ma-2" ShowCloseIcon="true" CloseIconClicked="() => _errorMessage = null">
+                    @_errorMessage
+                </MudAlert>
+            }
+
+            <div class="flex-grow-1" style="overflow: hidden;">
+                <ChatView Messages="@_currentConversation.Messages"
+                         IsStreaming="@_isStreaming"
+                         StreamingContent="@_streamingContent" />
+            </div>
+
+            <div class="pa-3" style="border-top: 1px solid var(--mud-palette-divider);">
+                <ChatInput OnSend="SendMessage"
+                          IsDisabled="@_isStreaming"
+                          OnCancel="CancelRequest" />
+            </div>
         </div>
     </div>
 }
@@ -55,19 +82,40 @@ else
     private bool _isStreaming;
     private string _streamingContent = string.Empty;
     private string? _errorMessage;
+    private bool _showMcpPanel;
 
     private IClaudeCliDetector? _cliDetector;
     private IClaudeCliService? _cliService;
+    private IMcpConfigService? _mcpConfigService;
     private ILogger<AgentPanel>? _logger;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        // Create services - in a real app these would be injected via DI
-        _cliDetector = new ClaudeCliDetector();
         _logger = NullLogger<AgentPanel>.Instance;
-        _cliService = new ClaudeCliService(_cliDetector, NullLogger<ClaudeCliService>.Instance);
+
+        var storageFactory = ServiceProvider.GetService<IPluginStorageFactory>();
+        var mcpServerState = ServiceProvider.GetService<McpServerState>();
+
+        _cliDetector = new ClaudeCliDetector();
+
+        var mcpManager = new ClaudeMcpManager(_cliDetector, NullLogger<ClaudeMcpManager>.Instance);
+
+        var storage = storageFactory?.CreateForPlugin(ManifestConstants.Id);
+        _mcpConfigService = new McpConfigService(
+            storage,
+            mcpServerState,
+            mcpManager,
+            NullLogger<McpConfigService>.Instance);
+        await _mcpConfigService.LoadAsync();
+
+        _mcpConfigService.ConfigurationChanged += OnMcpConfigChanged;
+
+        _cliService = new ClaudeCliService(
+            _cliDetector,
+            null,  
+            NullLogger<ClaudeCliService>.Instance);
 
         await CheckCliInstallation();
     }
@@ -92,18 +140,42 @@ else
         StateHasChanged();
     }
 
+    private void ToggleMcpPanel()
+    {
+        _showMcpPanel = !_showMcpPanel;
+    }
+
+    private string GetMcpStatusText()
+    {
+        if (_mcpConfigService == null)
+        {
+            return "MCP: Not available";
+        }
+
+        var enabledCount = _mcpConfigService.GetAllServers().Count(s => s.Enabled);
+        return enabledCount switch
+        {
+            0 => "MCP: No servers enabled",
+            1 => "MCP: 1 server enabled",
+            _ => $"MCP: {enabledCount} servers enabled"
+        };
+    }
+
+    private void OnMcpConfigChanged(object? sender, EventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     private async Task SendMessage(string message)
     {
         if (_cliService == null) return;
 
-        // Add user message
         _currentConversation.Messages.Add(new ChatMessage
         {
             Role = MessageRole.User,
             Content = message
         });
 
-        // Start streaming response
         _isStreaming = true;
         _streamingContent = string.Empty;
         _errorMessage = null;
@@ -111,13 +183,13 @@ else
 
         try
         {
-            await foreach (var chunk in _cliService.SendMessageAsync(message))
+            var context = BuildAgentContext();
+            await foreach (var chunk in _cliService.SendMessageAsync(message, context))
             {
                 _streamingContent += chunk;
                 StateHasChanged();
             }
 
-            // Add completed assistant message
             _currentConversation.Messages.Add(new ChatMessage
             {
                 Role = MessageRole.Assistant,
@@ -128,7 +200,6 @@ else
         }
         catch (OperationCanceledException)
         {
-            // User cancelled - add partial response if any
             if (!string.IsNullOrEmpty(_streamingContent))
             {
                 _currentConversation.Messages.Add(new ChatMessage
@@ -154,5 +225,36 @@ else
     private void CancelRequest()
     {
         _cliService?.CancelCurrentRequest();
+    }
+
+    private AgentContext BuildAgentContext()
+    {
+        var context = new AgentContext();
+
+        // Add wildcard patterns for all enabled MCP servers' tools
+        if (_mcpConfigService != null)
+        {
+            var enabledServers = _mcpConfigService.GetAllServers()
+                .Where(s => s.Enabled)
+                .ToList();
+
+            foreach (var server in enabledServers)
+            {
+                // MCP tools are named as mcp__{servername}__{toolname}
+                // Use wildcard to allow all tools from each enabled server
+                context.AllowedTools.Add($"mcp__{server.Name}__*");
+            }
+        }
+
+        return context;
+    }
+
+    public new void Dispose()
+    {
+        if (_mcpConfigService != null)
+        {
+            _mcpConfigService.ConfigurationChanged -= OnMcpConfigChanged;
+        }
+        base.Dispose();
     }
 }

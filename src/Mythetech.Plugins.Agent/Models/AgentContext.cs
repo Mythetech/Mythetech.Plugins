@@ -25,4 +25,17 @@ public class AgentContext
     /// Optional system prompt to prepend to conversations
     /// </summary>
     public string? SystemPrompt { get; set; }
+
+    /// <summary>
+    /// MCP servers to make available to Claude CLI
+    /// </summary>
+    public List<McpServerConfig> McpServers { get; set; } = [];
+
+    /// <summary>
+    /// List of allowed tool patterns for Claude CLI.
+    /// Can include specific tool names (e.g., "mcp__siren__list_collections")
+    /// or patterns with wildcards (e.g., "mcp__siren__*").
+    /// If empty, tools will require interactive approval (unless skip-permissions is used).
+    /// </summary>
+    public List<string> AllowedTools { get; set; } = [];
 }

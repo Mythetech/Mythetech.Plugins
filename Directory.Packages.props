@@ -5,8 +5,8 @@
 
   <ItemGroup>
     <!-- Mythetech Framework -->
-    <PackageVersion Include="Mythetech.Framework" Version="0.2.9" />
-    <PackageVersion Include="Mythetech.Framework.Desktop" Version="0.2.9" />
+    <PackageVersion Include="Mythetech.Framework" Version="0.3.3" />
+    <PackageVersion Include="Mythetech.Framework.Desktop" Version="0.3.0" />
 
     <!-- UI -->
     <PackageVersion Include="MudBlazor" Version="8.14.0" />

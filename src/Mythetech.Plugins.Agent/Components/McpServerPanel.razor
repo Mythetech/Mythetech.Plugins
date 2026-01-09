@@ -1,0 +1,151 @@
+@using MudBlazor
+@using Mythetech.Plugins.Agent.Models
+@using Mythetech.Plugins.Agent.Services
+
+<div class="mcp-panel pa-3">
+    <div class="d-flex align-center justify-space-between mb-3">
+        <MudText Typo="Typo.subtitle1" Class="font-weight-medium">MCP Servers</MudText>
+        <MudIconButton Icon="@Icons.Material.Filled.Add"
+                       Size="Size.Small"
+                       OnClick="OpenAddDialog"
+                       Title="Add MCP Server" />
+    </div>
+
+    @if (_servers.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            No MCP servers configured.
+        </MudText>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary mt-2">
+            MCP servers provide tools and resources that Claude can use during conversations.
+        </MudText>
+    }
+    else
+    {
+        <MudList T="McpServerConfig" Dense="true" Class="pa-0">
+            @foreach (var server in _servers)
+            {
+                <MudListItem T="McpServerConfig" Class="pa-0 mb-2">
+                    <div class="d-flex align-center gap-2 pa-2 rounded"
+                         style="background: var(--mud-palette-background-grey);">
+                        <MudSwitch T="bool"
+                                   Value="server.Enabled"
+                                   ValueChanged="(enabled) => OnServerEnabledChanged(server.Name, enabled)"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   Class="ma-0" />
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-center gap-1">
+                                <MudText Typo="Typo.body2" Class="font-weight-medium">
+                                    @server.Name
+                                </MudText>
+                                @if (server.IsHostApp)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Class="ma-0 pa-1">
+                                        Host App
+                                    </MudChip>
+                                }
+                            </div>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                @GetServerDescription(server)
+                            </MudText>
+                        </div>
+                        @if (!server.IsHostApp)
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           OnClick="() => RemoveServer(server.Name)"
+                                           Title="Remove server" />
+                        }
+                    </div>
+                </MudListItem>
+            }
+        </MudList>
+    }
+</div>
+
+<AddMcpServerDialog @bind-IsVisible="_showAddDialog"
+                    OnServerAdded="OnServerAdded"
+                    ExistingNames="_existingNames" />
+
+@code {
+    [Parameter]
+    public IMcpConfigService? McpService { get; set; }
+
+    private List<McpServerConfig> _servers = [];
+    private HashSet<string> _existingNames = [];
+    private bool _showAddDialog;
+
+    protected override void OnInitialized()
+    {
+        RefreshServers();
+        if (McpService != null)
+        {
+            McpService.ConfigurationChanged += OnConfigurationChanged;
+        }
+    }
+
+    private void RefreshServers()
+    {
+        if (McpService != null)
+        {
+            _servers = McpService.GetAllServers().ToList();
+            _existingNames = _servers.Select(s => s.Name.ToLowerInvariant()).ToHashSet();
+        }
+    }
+
+    private void OnConfigurationChanged(object? sender, EventArgs e)
+    {
+        RefreshServers();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnServerEnabledChanged(string name, bool enabled)
+    {
+        McpService?.SetServerEnabled(name, enabled);
+        _ = McpService?.SaveAsync();
+    }
+
+    private async Task RemoveServer(string name)
+    {
+        if (McpService != null)
+        {
+            await McpService.RemoveServerAsync(name);
+            await McpService.SaveAsync();
+        }
+    }
+
+    private void OpenAddDialog()
+    {
+        _showAddDialog = true;
+    }
+
+    private async Task OnServerAdded(McpServerConfig server)
+    {
+        if (McpService != null)
+        {
+            await McpService.AddServerAsync(server);
+            await McpService.SaveAsync();
+        }
+        _showAddDialog = false;
+    }
+
+    private static string GetServerDescription(McpServerConfig server)
+    {
+        return server.Type switch
+        {
+            McpTransportType.Stdio => $"stdio: {server.Command}",
+            McpTransportType.Http => $"http: {server.Url}",
+            _ => server.Type.ToString()
+        };
+    }
+
+    public void Dispose()
+    {
+        if (McpService != null)
+        {
+            McpService.ConfigurationChanged -= OnConfigurationChanged;
+        }
+    }
+}

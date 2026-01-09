@@ -4,6 +4,7 @@ using Mythetech.Framework.Desktop;
 using Mythetech.Framework.Desktop.Environment;
 using Mythetech.Framework.Desktop.Photino;
 using Mythetech.Framework.Infrastructure.Files;
+using Mythetech.Framework.Infrastructure.Mcp;
 using Mythetech.Framework.Infrastructure.MessageBus;
 using Mythetech.Framework.Infrastructure.Plugins;
 using Mythetech.Plugins.Notes;
@@ -13,8 +14,20 @@ using NotesManifest = Mythetech.Plugins.Notes.Manifest;
 using GamesManifest = Mythetech.Plugins.Games.Manifest;
 using AgentManifest = Mythetech.Plugins.Agent.Manifest;
 
+// Check if started with --mcp flag - run as MCP server instead of GUI app
+if (await McpRegistrationExtensions.TryRunMcpServerAsync(args, options =>
+{
+    options.ServerName = "PluginTester";
+    options.ServerVersion = "1.0.0";
+}))
+{
+    // MCP server ran and completed, exit the application
+    return;
+}
+
 var appBuilder = PhotinoBlazorAppBuilder.CreateDefault(args);
 
+appBuilder.Services.AddHttpClient();
 appBuilder.Services.AddLogging();
 appBuilder.Services.AddMudServices();
 appBuilder.Services.AddMessageBus();

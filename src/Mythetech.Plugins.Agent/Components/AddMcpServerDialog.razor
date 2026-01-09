@@ -1,0 +1,208 @@
+@using MudBlazor
+@using Mythetech.Plugins.Agent.Models
+
+<MudDialog @bind-Visible="IsVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Add MCP Server</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_isValid">
+            <MudTextField T="string"
+                          @bind-Value="_name"
+                          Label="Server Name"
+                          Required="true"
+                          RequiredError="Name is required"
+                          Validation="@(new Func<string, string?>(ValidateName))"
+                          Immediate="true"
+                          Class="mb-3" />
+
+            <MudSelect T="McpTransportType"
+                       @bind-Value="_transportType"
+                       Label="Transport Type"
+                       Class="mb-3">
+                <MudSelectItem Value="McpTransportType.Stdio">Stdio (Local Process)</MudSelectItem>
+                <MudSelectItem Value="McpTransportType.Http">HTTP (Remote Server)</MudSelectItem>
+            </MudSelect>
+
+            @if (_transportType == McpTransportType.Stdio)
+            {
+                <MudTextField T="string"
+                              @bind-Value="_command"
+                              Label="Command"
+                              Required="true"
+                              RequiredError="Command is required"
+                              Placeholder="e.g., npx or /usr/local/bin/my-mcp-server"
+                              HelperText="The executable to run"
+                              Immediate="true"
+                              Class="mb-3" />
+
+                <MudTextField T="string"
+                              @bind-Value="_args"
+                              Label="Arguments"
+                              Placeholder="@_argsPlaceholder"
+                              HelperText="Space-separated arguments (will be split automatically)"
+                              Class="mb-3" />
+
+                <MudTextField T="string"
+                              @bind-Value="_env"
+                              Label="Environment Variables"
+                              Placeholder="e.g., API_KEY=abc123 DEBUG=true"
+                              HelperText="Space-separated KEY=VALUE pairs"
+                              Class="mb-3" />
+            }
+            else
+            {
+                <MudTextField T="string"
+                              @bind-Value="_url"
+                              Label="Server URL"
+                              Required="true"
+                              RequiredError="URL is required"
+                              Placeholder="https://api.example.com/mcp"
+                              HelperText="The HTTP endpoint for the MCP server"
+                              Immediate="true"
+                              Class="mb-3" />
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Disabled="!_isValid"
+                   OnClick="Submit">
+            Add Server
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<McpServerConfig> OnServerAdded { get; set; }
+
+    [Parameter]
+    public HashSet<string> ExistingNames { get; set; } = [];
+
+    private MudForm? _form;
+    private bool _isValid;
+
+    private string _name = "";
+    private McpTransportType _transportType = McpTransportType.Stdio;
+    private string _command = "";
+    private string _args = "";
+    private string _env = "";
+    private string _url = "";
+
+    private const string _argsPlaceholder = "e.g., -y @anthropic-ai/mcp-server-fetch";
+
+    private static readonly DialogOptions _dialogOptions = new()
+    {
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true,
+        CloseOnEscapeKey = true
+    };
+
+    private string? ValidateName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "Name is required";
+        }
+
+        if (ExistingNames.Contains(name.ToLowerInvariant()))
+        {
+            return "A server with this name already exists";
+        }
+
+        return null;
+    }
+
+    private async Task Cancel()
+    {
+        ResetForm();
+        IsVisible = false;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task Submit()
+    {
+        if (_form != null)
+        {
+            await _form.Validate();
+            if (!_form.IsValid)
+            {
+                return;
+            }
+        }
+
+        var server = new McpServerConfig
+        {
+            Name = _name.Trim(),
+            Type = _transportType,
+            Enabled = true
+        };
+
+        if (_transportType == McpTransportType.Stdio)
+        {
+            server.Command = _command.Trim();
+            server.Args = ParseArgs(_args);
+            server.Env = ParseEnv(_env);
+        }
+        else
+        {
+            server.Url = _url.Trim();
+        }
+
+        await OnServerAdded.InvokeAsync(server);
+        ResetForm();
+        IsVisible = false;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private void ResetForm()
+    {
+        _name = "";
+        _transportType = McpTransportType.Stdio;
+        _command = "";
+        _args = "";
+        _env = "";
+        _url = "";
+    }
+
+    private static List<string> ParseArgs(string args)
+    {
+        if (string.IsNullOrWhiteSpace(args))
+        {
+            return [];
+        }
+
+        // Simple space-separated parsing (doesn't handle quoted strings)
+        return args.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+    }
+
+    private static Dictionary<string, string> ParseEnv(string env)
+    {
+        if (string.IsNullOrWhiteSpace(env))
+        {
+            return [];
+        }
+
+        var result = new Dictionary<string, string>();
+        var pairs = env.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var pair in pairs)
+        {
+            var parts = pair.Split('=', 2);
+            if (parts.Length == 2 && !string.IsNullOrEmpty(parts[0]))
+            {
+                result[parts[0]] = parts[1];
+            }
+        }
+
+        return result;
+    }
+}

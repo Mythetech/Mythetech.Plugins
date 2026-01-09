@@ -12,5 +12,5 @@ public class Manifest : IPluginManifest
     public string Description { get; } = "Chat interface wrapping the Claude CLI for AI-assisted conversations";
     public string? Icon { get; } = Icons.Material.Outlined.SmartToy;
     public PluginAsset[] Assets => [];
-    public bool IsDevPlugin { get; set; } = true;
+    public bool IsDevPlugin { get; } = true;
 }

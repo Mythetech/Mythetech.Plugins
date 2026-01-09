@@ -9,6 +9,7 @@ namespace Mythetech.Plugins.Agent.Services;
 public class ClaudeCliService : IClaudeCliService, IDisposable
 {
     private readonly IClaudeCliDetector _detector;
+    private readonly IMcpConfigService? _mcpConfig;
     private readonly ILogger<ClaudeCliService> _logger;
     private Process? _currentProcess;
     private CancellationTokenSource? _cts;
@@ -16,10 +17,19 @@ public class ClaudeCliService : IClaudeCliService, IDisposable
     public bool IsProcessing => _currentProcess != null && !_currentProcess.HasExited;
     public event EventHandler<bool>? ProcessingStateChanged;
 
-    public ClaudeCliService(IClaudeCliDetector detector, ILogger<ClaudeCliService> logger)
+    public ClaudeCliService(
+        IClaudeCliDetector detector,
+        IMcpConfigService? mcpConfig,
+        ILogger<ClaudeCliService> logger)
     {
         _detector = detector;
+        _mcpConfig = mcpConfig;
         _logger = logger;
+    }
+
+    public ClaudeCliService(IClaudeCliDetector detector, ILogger<ClaudeCliService> logger)
+        : this(detector, null, logger)
+    {
     }
 
     public async IAsyncEnumerable<string> SendMessageAsync(
@@ -35,10 +45,10 @@ public class ClaudeCliService : IClaudeCliService, IDisposable
 
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-        // Build command arguments
-        var args = BuildArguments(message, context);
+        // Build command arguments as a list (avoids shell parsing issues with JSON)
+        var argsList = BuildArgumentsList(message, context);
 
-        var psi = new ProcessStartInfo(cliPath, args)
+        var psi = new ProcessStartInfo(cliPath)
         {
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -49,7 +59,12 @@ public class ClaudeCliService : IClaudeCliService, IDisposable
             WorkingDirectory = Path.GetTempPath()
         };
 
-        _logger.LogDebug("Starting Claude CLI: {Path} {Args}", cliPath, args);
+        foreach (var arg in argsList)
+        {
+            psi.ArgumentList.Add(arg);
+        }
+
+        _logger.LogDebug("Starting Claude CLI: {Path} with {ArgCount} args", cliPath, argsList.Count);
 
         try
         {
@@ -92,10 +107,13 @@ public class ClaudeCliService : IClaudeCliService, IDisposable
         finally
         {
             CleanupProcess();
+            CleanupMcpConfigFile();
         }
     }
 
-    private string BuildArguments(string message, AgentContext? context)
+    private string? _mcpConfigFilePath;
+
+    private List<string> BuildArgumentsList(string message, AgentContext? context)
     {
         var args = new List<string>();
 
@@ -106,20 +124,51 @@ public class ClaudeCliService : IClaudeCliService, IDisposable
         if (!string.IsNullOrEmpty(context?.SystemPrompt))
         {
             args.Add("--system-prompt");
-            args.Add(EscapeArgument(context.SystemPrompt));
+            args.Add(context.SystemPrompt);
         }
 
-        // Add the message itself
-        args.Add(EscapeArgument(message));
+        // The prompt/message must come BEFORE variadic options like --allowedTools and --mcp-config
+        args.Add(message);
 
-        return string.Join(" ", args);
+        // Add allowed tools if configured (enables specific tools without prompting)
+        // Must come AFTER the message (variadic option)
+        if (context?.AllowedTools?.Count > 0)
+        {
+            args.Add("--allowedTools");
+            args.Add(string.Join(",", context.AllowedTools));
+        }
+
+        // Add MCP configuration if servers are configured
+        // Write to temp file because inline JSON parsing is unreliable
+        // Must come AFTER the message (variadic option)
+        var mcpJson = _mcpConfig?.BuildCliConfigJson();
+        if (!string.IsNullOrEmpty(mcpJson))
+        {
+            _mcpConfigFilePath = Path.Combine(Path.GetTempPath(), $"claude-mcp-{Guid.NewGuid():N}.json");
+            File.WriteAllText(_mcpConfigFilePath, mcpJson);
+            args.Add("--mcp-config");
+            args.Add(_mcpConfigFilePath);
+            _logger.LogDebug("Wrote MCP config to temp file: {Path}", _mcpConfigFilePath);
+        }
+
+        return args;
     }
 
-    private static string EscapeArgument(string arg)
+    private void CleanupMcpConfigFile()
     {
-        // Wrap in quotes and escape internal quotes
-        var escaped = arg.Replace("\\", "\\\\").Replace("\"", "\\\"");
-        return $"\"{escaped}\"";
+        if (_mcpConfigFilePath != null && File.Exists(_mcpConfigFilePath))
+        {
+            try
+            {
+                File.Delete(_mcpConfigFilePath);
+                _logger.LogDebug("Deleted MCP config temp file: {Path}", _mcpConfigFilePath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete MCP config temp file: {Path}", _mcpConfigFilePath);
+            }
+            _mcpConfigFilePath = null;
+        }
     }
 
     public void CancelCurrentRequest()
@@ -153,6 +202,7 @@ public class ClaudeCliService : IClaudeCliService, IDisposable
     public void Dispose()
     {
         CancelCurrentRequest();
+        CleanupMcpConfigFile();
         _cts?.Dispose();
         _currentProcess?.Dispose();
     }
