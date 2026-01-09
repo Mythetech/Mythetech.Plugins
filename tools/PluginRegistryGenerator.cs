@@ -1,4 +1,4 @@
-#:package Mythetech.Framework@0.2.1
+#:package Mythetech.Framework
 #:property PublishAot=false
 
 using System.Reflection;
