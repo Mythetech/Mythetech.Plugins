@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Mythetech.Plugins.WebAssemblyHost</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
+        <PackageReference Include="Mythetech.Framework" />
+        <PackageReference Include="Mythetech.Framework.WebAssembly" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Mythetech.Plugins.Notes\Mythetech.Plugins.Notes.csproj" />
+        <ProjectReference Include="..\..\src\Mythetech.Plugins.Games\Mythetech.Plugins.Games.csproj" />
+    </ItemGroup>
+
+</Project>
