@@ -1,0 +1,46 @@
+@page "/"
+@inject PluginState PluginState
+
+<MudText Typo="Typo.h4" Class="mb-2">Plugin Sample Host</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+    Proving the Mythetech plugin system works in WebAssembly.
+</MudText>
+
+<MudGrid>
+    @foreach (var plugin in PluginState.EnabledPlugins)
+    {
+        <MudItem xs="12" sm="6">
+            <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid var(--mud-palette-divider);">
+                <div class="d-flex align-center gap-3 mb-3">
+                    <MudAvatar Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Medium">
+                        <MudIcon Icon="@(plugin.Manifest.Icon ?? Icons.Material.Rounded.Extension)" />
+                    </MudAvatar>
+                    <div>
+                        <MudText Typo="Typo.subtitle1">@plugin.Manifest.Name</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            v@(plugin.Manifest.Version) - @plugin.Manifest.Developer
+                        </MudText>
+                    </div>
+                </div>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
+                    @plugin.Manifest.Description
+                </MudText>
+                <div class="d-flex align-center gap-2">
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">
+                        @plugin.Manifest.Assets.Length asset(s)
+                    </MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Success">
+                        Active
+                    </MudChip>
+                </div>
+            </MudPaper>
+        </MudItem>
+    }
+</MudGrid>
+
+@if (!PluginState.EnabledPlugins.Any())
+{
+    <MudAlert Severity="Severity.Warning" Class="mt-4">
+        No plugins loaded. Check Program.cs for UsePluginAsync calls.
+    </MudAlert>
+}

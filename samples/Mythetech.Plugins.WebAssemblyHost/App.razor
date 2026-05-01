@@ -1,0 +1,66 @@
+<MudThemeProvider Theme="_theme" IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<Router AppAssembly="@typeof(App).Assembly" AdditionalAssemblies="@AdditionalAssemblies">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <MudText Typo="Typo.h5">Page Not Found</MudText>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+@code {
+    private static readonly System.Reflection.Assembly[] AdditionalAssemblies =
+    [
+        typeof(Mythetech.Plugins.Notes.Manifest).Assembly,
+        typeof(Mythetech.Plugins.Games.Manifest).Assembly
+    ];
+
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#7c3aed",
+            Secondary = "#06b6d4",
+            Tertiary = "#f59e0b",
+            AppbarBackground = "#ffffff",
+            Background = "#f5f5f5",
+            Surface = "#ffffff",
+            Success = "#10b981",
+            Warning = "#f59e0b",
+            Error = "#ef4444",
+            Info = "#3b82f6"
+        },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#a78bfa",
+            Secondary = "#22d3ee",
+            Tertiary = "#fbbf24",
+            AppbarBackground = "#1e1e2d",
+            Background = "#121212",
+            Surface = "#1e1e2d",
+            Success = "#34d399",
+            Warning = "#fbbf24",
+            Error = "#f87171",
+            Info = "#60a5fa",
+            TextPrimary = "#e0e0e0",
+            TextSecondary = "#a0a0a0"
+        },
+        Typography = new Typography
+        {
+            Default = new DefaultTypography
+            {
+                FontFamily = ["Segoe UI", "Roboto", "-apple-system", "BlinkMacSystemFont", "sans-serif"]
+            }
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DefaultBorderRadius = "8px"
+        }
+    };
+}

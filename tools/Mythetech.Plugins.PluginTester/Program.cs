@@ -13,6 +13,7 @@ using Photino.Blazor;
 using NotesManifest = Mythetech.Plugins.Notes.Manifest;
 using GamesManifest = Mythetech.Plugins.Games.Manifest;
 using AgentManifest = Mythetech.Plugins.Agent.Manifest;
+using Mythetech.Framework.Desktop.Storage.LiteDb;
 
 // Check if started with --mcp flag - run as MCP server instead of GUI app
 if (await McpRegistrationExtensions.TryRunMcpServerAsync(args, options =>
@@ -50,9 +51,9 @@ app.MainWindow.SetUseOsDefaultLocation(true);
 app.RegisterProvider(app.Services);
 app.Services.UseMessageBus(typeof(Program).Assembly, typeof(IConsumer<>).Assembly);
 
-app.Services.UsePlugins();
-app.Services.UsePlugin(typeof(NotesManifest).Assembly);
-app.Services.UsePlugin(typeof(GamesManifest).Assembly);
-app.Services.UsePlugin(typeof(AgentManifest).Assembly);
+app.Services.UsePluginFramework();
+await app.Services.UsePluginAsync(typeof(NotesManifest).Assembly);
+await app.Services.UsePluginAsync(typeof(GamesManifest).Assembly);
+await app.Services.UsePluginAsync(typeof(AgentManifest).Assembly);
 
 app.Run();

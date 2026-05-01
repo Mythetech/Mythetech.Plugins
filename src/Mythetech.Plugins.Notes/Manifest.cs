@@ -15,10 +15,6 @@ public class Manifest : IPluginManifest
     [
         PluginAsset.Css("/_content/PSC.Blazor.Components.MarkdownEditor/css/easymde.min.css"),
         PluginAsset.Css("/_content/PSC.Blazor.Components.MarkdownEditor/css/markdowneditor.css"),
-        PluginAsset.Js("/_content/PSC.Blazor.Components.MarkdownEditor/js/easymde.min.js"),
-        PluginAsset.Js("/_content/PSC.Blazor.Components.MarkdownEditor/js/markdownEditor.js"),
-        //PluginAsset.Js("/_content/PSC.Blazor.Components.MarkdownEditor/js/mermaid.min.js"),
-        PluginAsset.Js("/_content/PSC.Blazor.Components.MarkdownEditor/js/textarearesize.min.js"),
     ];
 }
 

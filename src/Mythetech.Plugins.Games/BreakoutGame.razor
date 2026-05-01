@@ -44,7 +44,6 @@
     private bool gameOver = false;
     private int score = 0;
     private int bricksRemaining = 0;
-    private IJSObjectReference? jsModule;
     private bool leftKeyPressed = false;
     private bool rightKeyPressed = false;
     private CancellationTokenSource? gameLoopCancellation;
@@ -72,8 +71,7 @@
     {
         if (firstRender)
         {
-            jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Mythetech.Plugins.Games/breakout.js");
-            await jsModule.InvokeVoidAsync("setupCanvas", canvasRef);
+            await JSRuntime.InvokeVoidAsync("breakoutGame.setupCanvas", canvasRef);
             await InitializeBricks();
             await Draw();
         }
@@ -212,9 +210,7 @@
 
     private async Task Draw()
     {
-        if (jsModule == null) return;
-
-        await jsModule.InvokeVoidAsync("drawBreakout", new
+        await JSRuntime.InvokeVoidAsync("breakoutGame.drawBreakout", new
         {
             canvasRef,
             paddleX,
@@ -244,11 +240,8 @@
     {
         if (!isPlaying) return;
 
-        if (jsModule != null)
-        {
-            var canvasX = await jsModule.InvokeAsync<double>("getCanvasX", canvasRef, e.ClientX);
-            paddleX = Math.Max(0, Math.Min(800 - PaddleWidth, canvasX - PaddleWidth / 2));
-        }
+        var canvasX = await JSRuntime.InvokeAsync<double>("breakoutGame.getCanvasX", canvasRef, e.ClientX);
+        paddleX = Math.Max(0, Math.Min(800 - PaddleWidth, canvasX - PaddleWidth / 2));
     }
 
     private async Task OnCanvasClick(MouseEventArgs e)
@@ -283,15 +276,12 @@
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         gameLoopCancellation?.Cancel();
         isPlaying = false;
-        if (jsModule != null)
-        {
-            await jsModule.DisposeAsync();
-        }
         gameLoopCancellation?.Dispose();
+        return ValueTask.CompletedTask;
     }
 }
 

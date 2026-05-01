@@ -1,0 +1,9 @@
+html, body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.border-l {
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+}

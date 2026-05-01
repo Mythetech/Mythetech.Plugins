@@ -1,0 +1,85 @@
+@inherits LayoutComponentBase
+@inject PluginState PluginState
+@inject IPluginAssetLoader AssetLoader
+@implements IDisposable
+
+<MudLayout>
+    <MudAppBar Elevation="0" Dense="true">
+        <MudIconButton Icon="@Icons.Material.Rounded.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="ToggleDrawer" />
+        <MudText Typo="Typo.subtitle1">Plugin Sample Host (WebAssembly)</MudText>
+        <MudSpacer />
+        <MudText Typo="Typo.caption" Color="Color.Inherit">
+            @PluginState.EnabledPlugins.Count() plugin(s) loaded
+        </MudText>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" Variant="DrawerVariant.Mini" OpenMiniOnHover="true">
+        <MudNavMenu>
+            <MudNavLink Href="/" Icon="@Icons.Material.Rounded.Home">Home</MudNavLink>
+        </MudNavMenu>
+        <MudDivider Class="my-2" />
+        <StandardPluginMenu />
+    </MudDrawer>
+
+    <MudMainContent Class="d-flex" Style="height: calc(100vh - 48px);">
+        <div class="flex-grow-1 pa-4" style="overflow: auto;">
+            @Body
+        </div>
+
+        @if (PluginState.EnabledContextPanelComponentsMetadata.Any())
+        {
+            <MudPaper Width="350px" Elevation="0" Class="context-panel border-l" Style="overflow: auto;">
+                @foreach (var panel in PluginState.EnabledContextPanelComponentsMetadata.OrderBy(p => p.Order))
+                {
+                    <DynamicComponent Type="@panel.ComponentType" />
+                    <MudDivider />
+                }
+            </MudPaper>
+        }
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+
+    protected override void OnInitialized()
+    {
+        PluginState.StateChanged += OnPluginStateChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            foreach (var plugin in PluginState.EnabledPlugins)
+            {
+                try
+                {
+                    await AssetLoader.LoadPluginAssetsAsync(plugin);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to load assets for plugin {plugin.Manifest.Name}: {ex.Message}");
+                }
+            }
+        }
+    }
+
+    private void OnPluginStateChanged(object? sender, EventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    public void Dispose()
+    {
+        PluginState.StateChanged -= OnPluginStateChanged;
+    }
+}
