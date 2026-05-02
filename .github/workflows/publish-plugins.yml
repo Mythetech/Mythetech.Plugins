@@ -65,6 +65,19 @@ jobs:
           fi
         done
 
+    - name: Azure login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Purge CDN cache
+      run: |
+        az cdn endpoint purge \
+          --resource-group "${{ secrets.AZURE_CDN_RESOURCE_GROUP }}" \
+          --profile-name "${{ secrets.AZURE_CDN_PROFILE_NAME }}" \
+          --name "${{ secrets.AZURE_CDN_ENDPOINT_NAME }}" \
+          --content-paths "/release/plugins/*"
+
     - name: Cleanup
       run: rm -rf release/temp
 
